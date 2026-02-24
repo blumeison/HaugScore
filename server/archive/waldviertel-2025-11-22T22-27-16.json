@@ -1,0 +1,298 @@
+{
+  "metadata": {
+    "archivedAt": "2025-11-22T22:27:16.534Z",
+    "course": "Course Waldviertel",
+    "courseId": "waldviertel"
+  },
+  "summary": {
+    "winner": "Fighting for Bogey",
+    "winningScore": 84,
+    "totalWheelSpins": 0,
+    "holesCompleted": 18
+  },
+  "teams": [
+    {
+      "name": "Fighting for Bogey",
+      "totalScore": 84,
+      "holesPlayed": 18,
+      "scores": {
+        "1": 2,
+        "2": 3,
+        "3": 5,
+        "4": 4,
+        "5": 7,
+        "6": 8,
+        "7": 2,
+        "8": 3,
+        "9": 7,
+        "10": 7,
+        "11": 6,
+        "12": 3,
+        "13": 4,
+        "14": 6,
+        "15": 3,
+        "16": 7,
+        "17": 2,
+        "18": 5
+      }
+    },
+    {
+      "name": "DB Shanker",
+      "totalScore": 91,
+      "holesPlayed": 18,
+      "scores": {
+        "1": 2,
+        "2": 7,
+        "3": 6,
+        "4": 3,
+        "5": 2,
+        "6": 2,
+        "7": 6,
+        "8": 7,
+        "9": 6,
+        "10": 3,
+        "11": 4,
+        "12": 6,
+        "13": 6,
+        "14": 7,
+        "15": 6,
+        "16": 7,
+        "17": 5,
+        "18": 6
+      }
+    },
+    {
+      "name": "High flyers",
+      "totalScore": 91,
+      "holesPlayed": 18,
+      "scores": {
+        "1": 7,
+        "2": 5,
+        "3": 2,
+        "4": 6,
+        "5": 4,
+        "6": 7,
+        "7": 6,
+        "8": 5,
+        "9": 3,
+        "10": 6,
+        "11": 7,
+        "12": 3,
+        "13": 2,
+        "14": 7,
+        "15": 6,
+        "16": 7,
+        "17": 5,
+        "18": 3
+      }
+    }
+  ],
+  "wheelSpins": [],
+  "rawGameState": {
+    "teams": [
+      {
+        "id": 1,
+        "name": "DB Shanker",
+        "logo": null,
+        "color": "#ef4444",
+        "scores": {
+          "1": 2,
+          "2": 7,
+          "3": 6,
+          "4": 3,
+          "5": 2,
+          "6": 2,
+          "7": 6,
+          "8": 7,
+          "9": 6,
+          "10": 3,
+          "11": 4,
+          "12": 6,
+          "13": 6,
+          "14": 7,
+          "15": 6,
+          "16": 7,
+          "17": 5,
+          "18": 6
+        },
+        "currentHole": 18,
+        "activeEffects": []
+      },
+      {
+        "id": 2,
+        "name": "Fighting for Bogey",
+        "logo": null,
+        "color": "#3b82f6",
+        "scores": {
+          "1": 2,
+          "2": 3,
+          "3": 5,
+          "4": 4,
+          "5": 7,
+          "6": 8,
+          "7": 2,
+          "8": 3,
+          "9": 7,
+          "10": 7,
+          "11": 6,
+          "12": 3,
+          "13": 4,
+          "14": 6,
+          "15": 3,
+          "16": 7,
+          "17": 2,
+          "18": 5
+        },
+        "currentHole": 18,
+        "activeEffects": []
+      },
+      {
+        "id": 3,
+        "name": "High flyers",
+        "logo": null,
+        "color": "#22c55e",
+        "scores": {
+          "1": 7,
+          "2": 5,
+          "3": 2,
+          "4": 6,
+          "5": 4,
+          "6": 7,
+          "7": 6,
+          "8": 5,
+          "9": 3,
+          "10": 6,
+          "11": 7,
+          "12": 3,
+          "13": 2,
+          "14": 7,
+          "15": 6,
+          "16": 7,
+          "17": 5,
+          "18": 3
+        },
+        "currentHole": 18,
+        "activeEffects": []
+      }
+    ],
+    "course": {
+      "id": "waldviertel",
+      "name": "Course Waldviertel",
+      "holes": [
+        {
+          "number": 1,
+          "par": 4,
+          "hcp": 11,
+          "image": "/images/waldviertel/hole1.jpg"
+        },
+        {
+          "number": 2,
+          "par": 4,
+          "hcp": 1,
+          "image": "/images/waldviertel/hole2.jpg"
+        },
+        {
+          "number": 3,
+          "par": 4,
+          "hcp": 9,
+          "image": "/images/waldviertel/hole3.jpg"
+        },
+        {
+          "number": 4,
+          "par": 3,
+          "hcp": 13,
+          "image": "/images/waldviertel/hole4.jpg"
+        },
+        {
+          "number": 5,
+          "par": 4,
+          "hcp": 15,
+          "image": "/images/waldviertel/hole5.jpg"
+        },
+        {
+          "number": 6,
+          "par": 5,
+          "hcp": 5,
+          "image": "/images/waldviertel/hole6.jpg"
+        },
+        {
+          "number": 7,
+          "par": 4,
+          "hcp": 3,
+          "image": "/images/waldviertel/hole7.jpg"
+        },
+        {
+          "number": 8,
+          "par": 3,
+          "hcp": 17,
+          "image": "/images/waldviertel/hole8.jpg"
+        },
+        {
+          "number": 9,
+          "par": 5,
+          "hcp": 7,
+          "image": "/images/waldviertel/hole9.jpg"
+        },
+        {
+          "number": 10,
+          "par": 4,
+          "hcp": 10,
+          "image": "/images/waldviertel/hole10.jpg"
+        },
+        {
+          "number": 11,
+          "par": 4,
+          "hcp": 8,
+          "image": "/images/waldviertel/hole11.jpg"
+        },
+        {
+          "number": 12,
+          "par": 4,
+          "hcp": 16,
+          "image": "/images/waldviertel/hole12.jpg"
+        },
+        {
+          "number": 13,
+          "par": 5,
+          "hcp": 14,
+          "image": "/images/waldviertel/hole13.jpg"
+        },
+        {
+          "number": 14,
+          "par": 4,
+          "hcp": 2,
+          "image": "/images/waldviertel/hole14.jpg"
+        },
+        {
+          "number": 15,
+          "par": 5,
+          "hcp": 6,
+          "image": "/images/waldviertel/hole15.jpg"
+        },
+        {
+          "number": 16,
+          "par": 3,
+          "hcp": 12,
+          "image": "/images/waldviertel/hole16.jpg"
+        },
+        {
+          "number": 17,
+          "par": 4,
+          "hcp": 4,
+          "image": "/images/waldviertel/hole17.jpg"
+        },
+        {
+          "number": 18,
+          "par": 3,
+          "hcp": 18,
+          "image": "/images/waldviertel/hole18.jpg"
+        }
+      ]
+    },
+    "activeChallenge": null,
+    "maxSpins": 10,
+    "wheelUnlocksAfterHole": 1,
+    "log": []
+  },
+  "log": []
+}

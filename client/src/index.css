@@ -1,0 +1,793 @@
+:root {
+  --bg-dark: #0f172a;
+  --bg-card: #1e293b;
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --accent-green: #22c55e;
+  --accent-pink: #ec4899;
+  --accent-blue: #3b82f6;
+  --border-color: #334155;
+
+  --font-main: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-main);
+  background-color: var(--bg-dark);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+.main-view {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+/* Team Header */
+.team-header {
+  text-align: center;
+  margin-bottom: 2rem;
+  padding: 2rem;
+  background: linear-gradient(135deg, var(--bg-card) 0%, #1a2435 100%);
+  border-radius: 1rem;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.team-header.wheel-eligible {
+  background: linear-gradient(135deg, #1e293b 0%, #2d1b4e 100%);
+  border: 2px solid var(--accent-pink);
+  box-shadow: 0 8px 30px rgba(236, 72, 153, 0.3);
+}
+
+.team-logo-large {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+  margin: 0 auto 1rem;
+  border: 4px solid var(--accent-green);
+  box-shadow: 0 0 20px rgba(34, 197, 94, 0.3);
+  transition: all 0.3s ease;
+}
+
+.wheel-eligible .team-logo-large {
+  /* Animated rainbow gradient border for wheel-eligible teams */
+  border: 6px solid;
+  border-image: linear-gradient(45deg,
+      var(--accent-pink),
+      #f59e0b,
+      var(--accent-green),
+      var(--accent-blue),
+      var(--accent-pink)) 1;
+  box-shadow:
+    0 0 40px rgba(236, 72, 153, 0.8),
+    0 0 60px rgba(236, 72, 153, 0.6),
+    inset 0 0 30px rgba(236, 72, 153, 0.2);
+  animation: pulse-glow 2s ease-in-out infinite, logo-breathe 3s ease-in-out infinite;
+  transform: scale(1.05);
+}
+
+.wheel-status-badge {
+  display: inline-block;
+  padding: 0.5rem 1rem;
+  border-radius: 2rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-top: 0.5rem;
+}
+
+.wheel-status-badge.eligible {
+  background: var(--accent-pink);
+  color: white;
+  animation: pulse-badge 2s infinite;
+  box-shadow: 0 4px 15px rgba(236, 72, 153, 0.5);
+}
+
+.wheel-status-badge.not-eligible {
+  background: rgba(148, 163, 184, 0.2);
+  color: var(--text-secondary);
+}
+
+.team-header h1 {
+  margin: 0;
+  font-size: 2rem;
+  background: linear-gradient(90deg, var(--accent-green), var(--accent-blue));
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+@keyframes pulse-glow {
+
+  0%,
+  100% {
+    box-shadow:
+      0 0 40px rgba(236, 72, 153, 0.8),
+      0 0 60px rgba(236, 72, 153, 0.6),
+      inset 0 0 30px rgba(236, 72, 153, 0.2);
+  }
+
+  50% {
+    box-shadow:
+      0 0 60px rgba(236, 72, 153, 1),
+      0 0 90px rgba(236, 72, 153, 0.8),
+      inset 0 0 40px rgba(236, 72, 153, 0.3);
+  }
+}
+
+@keyframes logo-breathe {
+
+  0%,
+  100% {
+    transform: scale(1.05);
+  }
+
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+@keyframes pulse-badge {
+
+  0%,
+  100% {
+    transform: scale(1);
+    box-shadow: 0 4px 15px rgba(236, 72, 153, 0.5);
+  }
+
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 6px 20px rgba(236, 72, 153, 0.7);
+  }
+}
+
+/* Scorecard */
+.scorecard {
+  background-color: var(--bg-card);
+  border-radius: 1rem;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  border: 1px solid var(--border-color);
+}
+
+.scorecard h3 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  color: var(--accent-pink);
+}
+
+.scorecard-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.scorecard-table th,
+.scorecard-table td {
+  padding: 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.scorecard-table th {
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.team-logo-small {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.my-team-row {
+  background-color: rgba(34, 197, 94, 0.1);
+  font-weight: 600;
+}
+
+.over-par {
+  color: #ef4444;
+}
+
+.under-par {
+  color: var(--accent-green);
+}
+
+.even-par {
+  color: var(--text-primary);
+}
+
+/* Score Input */
+.score-input {
+  background-color: var(--bg-card);
+  border-radius: 1rem;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  border: 2px solid var(--accent-blue);
+}
+
+.score-input h2 {
+  margin-top: 0;
+  text-align: center;
+  color: var(--accent-blue);
+}
+
+.score-buttons {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.score-btn {
+  background: linear-gradient(135deg, var(--accent-blue), #2563eb);
+  color: white;
+  border: none;
+  padding: 2rem 1rem;
+  border-radius: 1rem;
+  font-size: 1.5rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+.score-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(59, 130, 246, 0.4);
+}
+
+.score-btn:active {
+  transform: translateY(0);
+}
+
+.score-btn:nth-child(1) {
+  background: linear-gradient(135deg, #fbbf24, #f59e0b);
+}
+
+/* HIO */
+.score-btn:nth-child(8) {
+  background: linear-gradient(135deg, var(--accent-pink), #db2777);
+}
+
+/* Drink */
+.score-btn-selected {
+  border: 4px solid var(--accent-green) !important;
+  box-shadow: 0 0 20px rgba(34, 197, 94, 0.6) !important;
+  transform: scale(1.05) !important;
+}
+
+.submit-btn {
+  width: 100%;
+  margin-top: 1.5rem;
+  font-size: 1.5rem !important;
+  padding: 1.5rem !important;
+}
+
+/* Wheel */
+.wheel-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.95);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  animation: fadeIn 0.3s;
+}
+
+.wheel-container {
+  background: var(--bg-card);
+  border-radius: 2rem;
+  padding: 2rem;
+  max-width: 600px;
+  width: 90%;
+  text-align: center;
+  transition: all 0.3s ease;
+}
+
+.wheel-container.with-video {
+  max-width: 1200px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  align-items: center;
+}
+
+.video-section {
+  height: 400px;
+  width: 100%;
+}
+
+@media (max-width: 768px) {
+  .wheel-container.with-video {
+    grid-template-columns: 1fr;
+    height: 90vh;
+    overflow-y: auto;
+  }
+
+  .video-section {
+    height: 300px;
+  }
+}
+
+.wheel-alert,
+.wheel-waiting {
+  padding: 2rem;
+}
+
+.flashing-text {
+  animation: flash 1s infinite;
+  color: var(--accent-pink);
+  font-size: 1.8rem;
+}
+
+.btn-huge {
+  font-size: 1.8rem !important;
+  padding: 2rem 4rem !important;
+  width: 100%;
+}
+
+.wheel-result {
+  font-size: 1.5rem;
+  margin-top: 1rem;
+  color: var(--accent-green);
+}
+
+.spinner {
+  margin: 2rem auto;
+  width: 60px;
+  height: 60px;
+  border: 6px solid #ccc;
+  border-top: 6px solid var(--accent-pink);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.wheel-request {
+  text-align: center;
+  margin: 2rem 0;
+}
+
+/* Setup Button */
+.setup-btn {
+  position: fixed;
+  bottom: 1rem;
+  left: 1rem;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: var(--bg-card);
+  border: 2px solid var(--border-color);
+  color: var(--text-primary);
+  font-size: 1.8rem;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  transition: all 0.2s;
+  z-index: 100;
+}
+
+.setup-btn:hover {
+  transform: scale(1.1);
+  background: var(--accent-blue);
+}
+
+/* General buttons */
+.btn {
+  background-color: var(--accent-blue);
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 1rem;
+}
+
+.btn:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.btn-green {
+  background-color: var(--accent-green);
+}
+
+.btn-pink {
+  background-color: var(--accent-pink);
+}
+
+.card {
+  background-color: var(--bg-card);
+  border-radius: 1rem;
+  padding: 1.5rem;
+  border: 1px solid var(--border-color);
+  margin-bottom: 1rem;
+}
+
+input,
+select {
+  background-color: var(--bg-dark);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.grid {
+  display: grid;
+  gap: 1rem;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes flash {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.3;
+  }
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes pulse {
+
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(236, 72, 153, 0.4);
+  }
+
+  70% {
+    box-shadow: 0 0 0 10px rgba(236, 72, 153, 0);
+  }
+}
+
+/* Live Scoreboard - Golf Course Style */
+.live-scoreboard {
+  background: linear-gradient(135deg, #1a3a1a 0%, #0d2b0d 100%);
+  border-radius: 1.5rem;
+  padding: 2rem;
+  margin-top: 3rem;
+  margin-bottom: 2rem;
+  border: 3px solid #2d5a2d;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+}
+
+.scoreboard-title {
+  text-align: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #2d5a2d;
+}
+
+.scoreboard-title h2 {
+  margin: 0;
+  color: #ffd700;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+  font-size: 1.8rem;
+}
+
+.scoreboard-grid {
+  display: grid;
+  gap: 2rem;
+}
+
+.scoreboard-nine {
+  background: #ffffff;
+  border-radius: 1rem;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.scoreboard-header {
+  background: linear-gradient(135deg, #2d5a2d, #1a3a1a);
+  padding: 0.75rem;
+  text-align: center;
+}
+
+.scoreboard-header h3 {
+  margin: 0;
+  color: #ffd700;
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.scoreboard-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.scoreboard-table .header-row th {
+  background: #f0f0f0;
+  padding: 0.5rem;
+  border: 1px solid #ddd;
+  font-weight: 700;
+  color: #333;
+  text-align: center;
+}
+
+.scoreboard-table .team-col {
+  min-width: 120px;
+  text-align: left !important;
+  background: #e8e8e8 !important;
+}
+
+.scoreboard-table .hole-col {
+  width: 50px;
+  padding: 0.4rem !important;
+}
+
+.hole-number {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #000;
+}
+
+.hole-hcp {
+  font-size: 0.7rem;
+  color: #666;
+  font-weight: 400;
+}
+
+.scoreboard-table .total-col {
+  min-width: 80px;
+  background: #fff8dc !important;
+  font-weight: 700;
+}
+
+.scoreboard-table .par-row {
+  background: #fffacd;
+  font-weight: 700;
+}
+
+.scoreboard-table .par-row td {
+  padding: 0.6rem;
+  border: 1px solid #ddd;
+  text-align: center;
+  color: #000;
+}
+
+.par-label {
+  text-align: left !important;
+  font-weight: 700;
+  color: #2d5a2d;
+}
+
+.par-value {
+  font-size: 1rem;
+}
+
+.par-total {
+  background: #ffe4b5 !important;
+  font-size: 1.1rem;
+}
+
+.scoreboard-table tbody tr {
+  background: #fff;
+  transition: background 0.2s;
+}
+
+.scoreboard-table tbody tr:hover {
+  background: #f9f9f9;
+}
+
+.scoreboard-table tbody tr.my-team {
+  background: #e8f5e9 !important;
+  font-weight: 600;
+}
+
+.scoreboard-table tbody tr.my-team:hover {
+  background: #d4edda !important;
+}
+
+.team-name {
+  text-align: left !important;
+  padding: 0.75rem !important;
+  font-weight: 600;
+  color: #000;
+  border: 1px solid #ddd;
+}
+
+.team-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.team-mini-logo {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #ddd;
+}
+
+.score-cell {
+  text-align: center;
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  font-weight: 600;
+  font-size: 1rem;
+  color: #000;
+  background: #fff;
+}
+
+/* Golf Score Colors - Traditional */
+.score-cell.eagle {
+  background: #ffd700 !important;
+  color: #000;
+  font-weight: 700;
+  border: 2px solid #ffaa00 !important;
+}
+
+.score-cell.birdie {
+  background: #90EE90 !important;
+  color: #000;
+  border: 2px solid #32CD32 !important;
+}
+
+.score-cell.par {
+  background: #fff;
+  color: #000;
+}
+
+.score-cell.bogey {
+  background: #FFB6C1 !important;
+  color: #000;
+  border: 2px solid #FF69B4 !important;
+}
+
+.score-cell.double-bogey {
+  background: #FF6B6B !important;
+  color: #fff;
+  font-weight: 700;
+  border: 2px solid #ff0000 !important;
+}
+
+.team-total {
+  text-align: center;
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  background: #fff8dc !important;
+  font-weight: 700;
+}
+
+.total-score {
+  font-size: 1.2rem;
+  color: #000;
+  margin-right: 0.5rem;
+}
+
+.total-diff {
+  font-size: 0.9rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 0.3rem;
+  font-weight: 700;
+}
+
+.total-diff.over {
+  background: #ffcccb;
+  color: #d00;
+}
+
+.total-diff.under {
+  background: #90EE90;
+  color: #0a0;
+}
+
+.scoreboard-legend {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  flex-wrap: wrap;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 0.5rem;
+}
+
+.legend-item {
+  padding: 0.4rem 0.8rem;
+  border-radius: 0.3rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border: 2px solid transparent;
+}
+
+.legend-item.eagle {
+  background: #ffd700;
+  color: #000;
+  border-color: #ffaa00;
+}
+
+.legend-item.birdie {
+  background: #90EE90;
+  color: #000;
+  border-color: #32CD32;
+}
+
+.legend-item.par {
+  background: #fff;
+  color: #000;
+  border-color: #ddd;
+}
+
+.legend-item.bogey {
+  background: #FFB6C1;
+  color: #000;
+  border-color: #FF69B4;
+}
+
+.legend-item.double-bogey {
+  background: #FF6B6B;
+  color: #fff;
+  border-color: #ff0000;
+}
+
+/* Responsive Scoreboard */
+@media (max-width: 768px) {
+  .scoreboard-table {
+    font-size: 0.75rem;
+  }
+
+  .hole-col {
+    width: 35px !important;
+    padding: 0.3rem !important;
+  }
+
+  .hole-number {
+    font-size: 0.85rem;
+  }
+
+  .hole-hcp {
+    font-size: 0.6rem;
+  }
+
+  .team-mini-logo {
+    width: 20px;
+    height: 20px;
+  }
+
+  .scoreboard-title h2 {
+    font-size: 1.3rem;
+  }
+}

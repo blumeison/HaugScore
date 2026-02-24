@@ -1,0 +1,407 @@
+import React, { useState, useEffect } from 'react';
+
+export default function GameMasterDashboard({ gameState, onUpdateTeam, onResetGame, onSetCourse, onSetGameConfig, onExit }) {
+    const [showResetConfirm, setShowResetConfirm] = useState(false);
+    const [editingTeam, setEditingTeam] = useState(null);
+    const [editName, setEditName] = useState('');
+    const [editLogo, setEditLogo] = useState(null);
+    const [archives, setArchives] = useState([]);
+    const [selectedArchive, setSelectedArchive] = useState(null);
+    const [showArchives, setShowArchives] = useState(false);
+
+    useEffect(() => {
+        loadArchives();
+    }, []);
+
+    const loadArchives = async () => {
+        try {
+            const response = await fetch('http://localhost:3001/api/archives');
+            const data = await response.json();
+            setArchives(data);
+        } catch (error) {
+            console.error('Failed to load archives:', error);
+        }
+    };
+
+    const viewArchive = async (filename) => {
+        try {
+            const response = await fetch(`http://localhost:3001/api/archives/${filename}`);
+            const data = await response.json();
+            setSelectedArchive(data);
+        } catch (error) {
+            console.error('Failed to load archive:', error);
+        }
+    };
+
+    const handleCourseChange = (e) => {
+        onSetCourse(e.target.value);
+    };
+
+    const handleMaxSpinsChange = (e) => {
+        onSetGameConfig({ maxSpins: e.target.value });
+    };
+
+    const handleWheelUnlockChange = (e) => {
+        onSetGameConfig({ wheelUnlocksAfterHole: e.target.value });
+    };
+
+    const startEditTeam = (team) => {
+        setEditingTeam(team);
+        setEditName(team.name);
+        setEditLogo(null);
+    };
+
+    const handleFileChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setEditLogo(reader.result);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    const saveTeam = () => {
+        if (editingTeam) {
+            onUpdateTeam(editingTeam.id, editName, editLogo);
+            setEditingTeam(null);
+        }
+    };
+
+    const handleResetGame = () => {
+        onResetGame();
+        setShowResetConfirm(false);
+        // Reload archives after reset to show the newly archived round
+        setTimeout(() => loadArchives(), 500);
+    };
+
+    const formatArchiveName = (archive) => {
+        const date = new Date(archive.metadata.archivedAt);
+        const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        const timeStr = date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+        return `${archive.metadata.course} - ${dateStr} ${timeStr}`;
+    };
+
+    return (
+        <div className="gm-dashboard" style={{ padding: '2rem', maxWidth: '800px', margin: '0 auto', color: 'white' }}>
+            <div className="flex justify-between items-center mb-8">
+                <h1>👑 Game Master Dashboard</h1>
+                <button onClick={onExit} className="btn" style={{ background: '#475569' }}>Exit</button>
+            </div>
+
+            {/* Game Configuration */}
+            <div className="card mb-8" style={{ background: '#1e293b', padding: '1.5rem', borderRadius: '1rem' }}>
+                <h2 className="mb-4 text-emerald-400">⚙️ Game Setup</h2>
+
+                <div className="grid gap-6">
+                    <div>
+                        <label className="block mb-2 font-bold">Select Course</label>
+                        <select
+                            value={gameState.course?.id || 'waldviertel'}
+                            onChange={handleCourseChange}
+                            className="w-full p-3 rounded bg-slate-700 text-white border border-slate-600"
+                        >
+                            <option value="waldviertel">🌲 Course Waldviertel (Par 72)</option>
+                            <option value="haugschlag">⛳ Course Haugschlag (Par 72)</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label className="block mb-2 font-bold">Wheel Unlocks After Hole</label>
+                        <input
+                            type="number"
+                            min="1"
+                            max="18"
+                            value={gameState.wheelUnlocksAfterHole || 3}
+                            onChange={handleWheelUnlockChange}
+                            className="w-full p-3 rounded bg-slate-700 text-white border border-slate-600"
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block mb-2 font-bold">Max Wheel Spins per Team</label>
+                        <input
+                            type="number"
+                            min="0"
+                            max="10"
+                            value={gameState.maxSpins || 2}
+                            onChange={handleMaxSpinsChange}
+                            className="w-full p-3 rounded bg-slate-700 text-white border border-slate-600"
+                        />
+                    </div>
+                </div>
+            </div>
+
+            {/* Past Rounds */}
+            <div className="card mb-8" style={{ background: '#1e293b', padding: '1.5rem', borderRadius: '1rem' }}>
+                <div className="flex justify-between items-center mb-4">
+                    <h2 className="text-purple-400">📜 Past Rounds ({archives.length})</h2>
+                    <button
+                        onClick={() => { setShowArchives(!showArchives); if (!showArchives) loadArchives(); }}
+                        className="btn btn-sm"
+                        style={{ background: '#7c3aed' }}
+                    >
+                        {showArchives ? 'Hide' : 'View'}
+                    </button>
+                </div>
+
+                {showArchives && (
+                    <div className="grid gap-3">
+                        {archives.length === 0 ? (
+                            <p className="text-gray-400 text-center py-4">No past rounds yet. Reset a game to create an archive!</p>
+                        ) : (
+                            archives.map(archive => (
+                                <div
+                                    key={archive.filename}
+                                    className="p-4 bg-gradient-to-r from-slate-700 to-slate-600 rounded-lg cursor-pointer hover:from-slate-600 hover:to-slate-500 transition-all border border-slate-500"
+                                    onClick={() => viewArchive(archive.filename)}
+                                >
+                                    <div className="flex justify-between items-center">
+                                        <div className="flex-1">
+                                            <div className="font-bold text-lg text-white mb-1">
+                                                {formatArchiveName(archive)}
+                                            </div>
+                                            <div className="flex gap-4 text-sm text-gray-300">
+                                                <span>🏆 Winner: <span className="text-emerald-400 font-semibold">{archive.summary.winner}</span></span>
+                                                <span>📊 Score: <span className="font-semibold">{archive.summary.winningScore}</span></span>
+                                                <span>⛳ Holes: <span className="font-semibold">{archive.summary.holesCompleted}</span></span>
+                                                <span>🎡 Spins: <span className="font-semibold">{archive.summary.totalWheelSpins}</span></span>
+                                            </div>
+                                        </div>
+                                        <div className="text-3xl">📊</div>
+                                    </div>
+                                </div>
+                            ))
+                        )}
+                    </div>
+                )}
+            </div>
+
+            {/* Team Management - Omitted for brevity, same as before */}
+
+            {/* Team Management */}
+            <div className="card mb-8" style={{ background: '#1e293b', padding: '1.5rem', borderRadius: '1rem' }}>
+                <h2 className="mb-4 text-blue-400">👥 Manage Teams</h2>
+
+                <div className="grid gap-4">
+                    {gameState.teams.map(team => (
+                        <div key={team.id} className="flex items-center justify-between p-3 bg-slate-700 rounded">
+                            <div className="flex items-center gap-3">
+                                {team.logo ? (
+                                    <img src={team.logo} alt={team.name} className="w-10 h-10 rounded-full object-cover" />
+                                ) : (
+                                    <div className="w-10 h-10 rounded-full" style={{ background: team.color }}></div>
+                                )}
+                                <span className="font-bold">{team.name}</span>
+                            </div>
+                            <button
+                                onClick={() => startEditTeam(team)}
+                                className="btn btn-sm"
+                                style={{ background: '#3b82f6' }}
+                            >
+                                ✏️ Edit
+                            </button>
+                        </div>
+                    ))}
+                </div>
+
+                {/* Edit Modal */}
+                {editingTeam && (
+                    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
+                        <div className="bg-slate-800 p-6 rounded-xl w-96">
+                            <h3 className="mb-4">Edit {editingTeam.name}</h3>
+                            <input
+                                type="text"
+                                value={editName}
+                                onChange={e => setEditName(e.target.value)}
+                                className="w-full p-2 mb-4 rounded bg-slate-700 text-white"
+                                placeholder="Team Name"
+                            />
+                            <input
+                                type="file"
+                                onChange={handleFileChange}
+                                className="w-full mb-4"
+                            />
+                            <div className="flex gap-2">
+                                <button onClick={saveTeam} className="btn btn-green flex-1">Save</button>
+                                <button onClick={() => setEditingTeam(null)} className="btn bg-slate-600 flex-1">Cancel</button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </div>
+
+            {/* Full-Screen Archive Viewer */}
+            {selectedArchive && (
+                <div
+                    className="fixed inset-0 bg-black/95 z-[9999] flex items-center justify-center p-8"
+                    onClick={() => setSelectedArchive(null)}
+                >
+                    <div
+                        className="relative w-full h-full max-w-[1800px] bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-2xl overflow-hidden shadow-2xl"
+                        onClick={e => e.stopPropagation()}
+                    >
+                        {/* Header */}
+                        <div className="absolute top-0 left-0 right-0 bg-gradient-to-b from-black/60 to-transparent p-8 z-10">
+                            <button
+                                onClick={() => setSelectedArchive(null)}
+                                className="absolute top-6 right-6 w-12 h-12 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white text-2xl transition-all"
+                            >
+                                ×
+                            </button>
+                            <div>
+                                <h1 className="text-4xl font-bold text-white mb-2">
+                                    {formatArchiveName(selectedArchive)}
+                                </h1>
+                                <div className="flex gap-8 text-lg">
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-gray-400">Winner:</span>
+                                        <span className="font-bold text-emerald-400 text-xl">🏆 {selectedArchive.summary.winner}</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-gray-400">Score:</span>
+                                        <span className="font-bold text-white">{selectedArchive.summary.winningScore}</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-gray-400">Holes:</span>
+                                        <span className="font-bold text-white">{selectedArchive.summary.holesCompleted}/18</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-gray-400">Wheel Spins:</span>
+                                        <span className="font-bold text-purple-400">🎡 {selectedArchive.summary.totalWheelSpins}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Content */}
+                        <div className="h-full overflow-y-auto pt-32 pb-8 px-8">
+                            {/* Scorecard */}
+                            <div className="mb-8">
+                                <div className="overflow-x-auto rounded-xl border-2 border-slate-700 shadow-xl">
+                                    <table className="w-full text-sm">
+                                        <thead>
+                                            <tr className="bg-gradient-to-r from-emerald-900 to-emerald-800">
+                                                <th className="p-4 text-left sticky left-0 bg-emerald-900 z-20 border-r-2 border-emerald-700">
+                                                    <div className="text-lg font-bold text-white">Team</div>
+                                                </th>
+                                                {[...Array(9)].map((_, i) => (
+                                                    <th key={i} className="p-3 text-center border-r border-emerald-700 min-w-[50px]">
+                                                        <div className="text-white font-bold">{i + 1}</div>
+                                                    </th>
+                                                ))}
+                                                <th className="p-3 text-center border-r-4 border-yellow-500 bg-yellow-900/30 min-w-[60px]">
+                                                    <div className="text-yellow-300 font-bold">OUT</div>
+                                                </th>
+                                                {[...Array(9)].map((_, i) => (
+                                                    <th key={i} className="p-3 text-center border-r border-emerald-700 min-w-[50px]">
+                                                        <div className="text-white font-bold">{i + 10}</div>
+                                                    </th>
+                                                ))}
+                                                <th className="p-3 text-center border-r-4 border-yellow-500 bg-yellow-900/30 min-w-[60px]">
+                                                    <div className="text-yellow-300 font-bold">IN</div>
+                                                </th>
+                                                <th className="p-4 text-center bg-gradient-to-r from-emerald-700 to-emerald-600 min-w-[80px]">
+                                                    <div className="text-xl font-bold text-white">TOTAL</div>
+                                                </th>
+                                            </tr>
+                                            <tr className="bg-slate-800 text-gray-300">
+                                                <td className="p-3 font-bold sticky left-0 bg-slate-800 z-20 border-r-2 border-slate-700">PAR</td>
+                                                {selectedArchive.rawGameState.course.holes.slice(0, 9).map(hole => (
+                                                    <td key={hole.number} className="p-3 text-center border-r border-slate-700">{hole.par}</td>
+                                                ))}
+                                                <td className="p-3 text-center border-r-4 border-yellow-500 bg-yellow-900/20 font-bold">
+                                                    {selectedArchive.rawGameState.course.holes.slice(0, 9).reduce((sum, h) => sum + h.par, 0)}
+                                                </td>
+                                                {selectedArchive.rawGameState.course.holes.slice(9).map(hole => (
+                                                    <td key={hole.number} className="p-3 text-center border-r border-slate-700">{hole.par}</td>
+                                                ))}
+                                                <td className="p-3 text-center border-r-4 border-yellow-500 bg-yellow-900/20 font-bold">
+                                                    {selectedArchive.rawGameState.course.holes.slice(9).reduce((sum, h) => sum + h.par, 0)}
+                                                </td>
+                                                <td className="p-3 text-center bg-slate-700 font-bold text-lg">
+                                                    {selectedArchive.rawGameState.course.holes.reduce((sum, h) => sum + h.par, 0)}
+                                                </td>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {selectedArchive.teams.map((team, idx) => {
+                                                const totalPar = selectedArchive.rawGameState.course.holes.reduce((sum, h) => sum + h.par, 0);
+                                                const scoreToPar = team.totalScore - totalPar;
+                                                    </tr>
+                                        );
+                                            })}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        {/* Wheel Spins */}
+                        {selectedArchive.wheelSpins.length > 0 && (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                                {selectedArchive.wheelSpins.map((spin, idx) => (
+                                    <div
+                                        key={idx}
+                                        className="bg-gradient-to-br from-purple-900/50 via-pink-900/50 to-purple-900/50 p-6 rounded-xl border-2 border-purple-500/50 shadow-lg"
+                                    >
+                                        <div className="flex items-center gap-4">
+                                            <div className="text-5xl">🎯</div>
+                                            <div className="flex-1">
+                                                <div className="text-xs text-purple-300 font-semibold mb-1">WHEEL SPIN #{idx + 1}</div>
+                                                <div className="text-xl mb-2">
+                                                    <span className="font-bold text-blue-300">{spin.challenger}</span>
+                                                    <span className="text-gray-300 text-lg"> vs </span>
+                                                    <span className="font-bold text-red-300">{spin.target}</span>
+                                                </div>
+                                            </div>
+                                            <div className="bg-purple-600 px-6 py-4 rounded-lg border-2 border-purple-400 shadow-lg">
+                                                <div className="text-xs text-purple-200 text-center mb-1">CLUB</div>
+                                                <div className="text-2xl font-bold text-white text-center">{spin.result}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                </div>
+                </div>
+    )
+}
+
+{/* Danger Zone */ }
+<div className="card" style={{ background: '#450a0a', padding: '1.5rem', borderRadius: '1rem', border: '1px solid #ef4444' }}>
+    <h2 className="mb-4 text-red-400">⚠️ Danger Zone</h2>
+
+    {!showResetConfirm ? (
+        <button
+            onClick={() => setShowResetConfirm(true)}
+            className="btn w-full"
+            style={{ background: '#ef4444', fontWeight: 'bold' }}
+        >
+            ☢️ RESET GAME
+        </button>
+    ) : (
+        <div className="text-center">
+            <p className="mb-4 font-bold text-white">Are you absolutely sure? This will wipe ALL scores!</p>
+            <div className="flex gap-4">
+                <button
+                    onClick={() => setShowResetConfirm(false)}
+                    className="btn flex-1 bg-slate-600"
+                >
+                    Cancel
+                </button>
+                <button
+                    onClick={handleResetGame}
+                    className="btn flex-1 bg-red-600 font-bold"
+                >
+                    YES, WIPE IT
+                </button>
+            </div>
+        </div>
+    )}
+</div>
+        </div >
+    );
+}

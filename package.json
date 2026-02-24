@@ -1,0 +1,16 @@
+{
+    "name": "haugscore",
+    "version": "1.0.0",
+    "description": "HaugScore Golf Dashboard",
+    "scripts": {
+        "start": "npm run start:server & npm run start:client",
+        "start:server": "cd server && npm start",
+        "start:client": "cd client && npm start",
+        "dev": "npm run dev:server & npm run dev:client",
+        "dev:server": "cd server && npm run dev",
+        "dev:client": "cd client && npm run dev"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC"
+}
