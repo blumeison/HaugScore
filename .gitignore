@@ -25,3 +25,10 @@ Thumbs.db
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# Runtime state (persists on fly.io volume, not in git)
+server/data.json
+server/archive/
+
+# Claude Code session state
+.claude/

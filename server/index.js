@@ -6,16 +6,26 @@ const fs = require('fs');
 const path = require('path');
 const game = require('./game');
 
+// DATA_DIR: where data.json and archive/ live. On fly.io this points at the
+// mounted volume (/data). Locally it defaults to the server/ folder so dev
+// behaviour is unchanged.
+const DATA_DIR = process.env.DATA_DIR || __dirname;
+const ARCHIVE_DIR = path.join(DATA_DIR, 'archive');
+
 const app = express();
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '2mb' })); // team logos are base64 data URLs
 
 const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
-        origin: "*", // Allow all for dev, restrict in prod
+        origin: "*",
         methods: ["GET", "POST"]
-    }
+    },
+    // Tablet/mobile-friendly keepalive settings:
+    // tablets going to sleep can take 30-60s to reconnect, default 20s timeout is too aggressive.
+    pingInterval: 25000,
+    pingTimeout: 60000,
 });
 
 // API Routes
@@ -40,19 +50,16 @@ app.post('/api/reset-game', (req, res) => {
 });
 
 app.get('/api/archives', (req, res) => {
-    const archivePath = path.join(__dirname, 'archive');
-    if (!fs.existsSync(archivePath)) {
+    if (!fs.existsSync(ARCHIVE_DIR)) {
         return res.json([]);
     }
 
-    const files = fs.readdirSync(archivePath)
+    const files = fs.readdirSync(ARCHIVE_DIR)
         .filter(f => (f.startsWith('round-') || f.match(/^[a-z]+-\d{4}-/)) && f.endsWith('.json'))
         .map(f => {
             try {
-                const filePath = path.join(archivePath, f);
+                const filePath = path.join(ARCHIVE_DIR, f);
                 const content = JSON.parse(fs.readFileSync(filePath, 'utf8'));
-
-                // Handle new format with metadata/summary
                 if (content.metadata && content.summary) {
                     return {
                         filename: f,
@@ -60,9 +67,6 @@ app.get('/api/archives', (req, res) => {
                         summary: content.summary
                     };
                 }
-
-                // Handle old format - skip
-                console.log(`Skipping old format archive: ${f}`);
                 return null;
             } catch (error) {
                 console.error(`Error reading archive ${f}:`, error);
@@ -76,20 +80,45 @@ app.get('/api/archives', (req, res) => {
 });
 
 app.get('/api/archives/:filename', (req, res) => {
-    const archivePath = path.join(__dirname, 'archive', req.params.filename);
-    if (!fs.existsSync(archivePath)) {
+    // Guard against path traversal: only allow plain filenames
+    const filename = req.params.filename;
+    if (filename.includes('/') || filename.includes('\\') || filename.includes('..')) {
+        return res.status(400).json({ error: 'Invalid filename' });
+    }
+    const filePath = path.join(ARCHIVE_DIR, filename);
+    if (!fs.existsSync(filePath)) {
         return res.status(404).json({ error: 'Archive not found' });
     }
 
-    const content = JSON.parse(fs.readFileSync(archivePath, 'utf8'));
+    const content = JSON.parse(fs.readFileSync(filePath, 'utf8'));
     res.json(content);
 });
+
+// ── Serve built client (production) ────────────────────────────────────────
+// The Dockerfile copies the client build to /app/client/dist, which is one
+// level up from this file (/app/server/index.js → /app/client/dist).
+const CLIENT_DIST = path.join(__dirname, '..', 'client', 'dist');
+if (fs.existsSync(CLIENT_DIST)) {
+    app.use(express.static(CLIENT_DIST));
+    // SPA fallback: any non-API route returns index.html so React Router / state works
+    app.use((req, res, next) => {
+        if (req.method !== 'GET' || req.path.startsWith('/api/') || req.path.startsWith('/socket.io/')) {
+            return next();
+        }
+        res.sendFile(path.join(CLIENT_DIST, 'index.html'));
+    });
+}
 
 io.on('connection', (socket) => {
     console.log('User connected:', socket.id);
 
-    // Send initial state
+    // Send initial state (also fires on every reconnect)
     socket.emit('stateUpdate', game.getGameState());
+
+    // Client can request a fresh state snapshot explicitly (e.g. after waking from sleep)
+    socket.on('requestState', () => {
+        socket.emit('stateUpdate', game.getGameState());
+    });
 
     socket.on('updateTeam', ({ teamId, name, logo }) => {
         console.log(`Update Team: ${teamId} -> ${name}`);
@@ -105,57 +134,11 @@ io.on('connection', (socket) => {
         }
     });
 
-    socket.on('useItem', ({ sourceId, targetId, itemId }) => {
-        console.log(`Item usage: ${sourceId} -> ${targetId} (${itemId})`);
-        const result = game.useItem(sourceId, targetId, itemId);
-        if (result.success) {
-            io.emit('stateUpdate', result.newState);
-            io.emit('notification', { message: result.message, type: 'info' });
-        }
-    });
-
-    // Step 1: Losing team requests to spin
-    socket.on('wheelSpinRequest', ({ teamId }) => {
-        console.log(`Wheel spin REQUEST from T${teamId}`);
-        const result = game.prepareWheelSpin(teamId);
-        if (result.success) {
-            // Broadcast state update (which now includes activeChallenge)
-            io.emit('stateUpdate', game.getGameState());
-
-            // Also emit specific alert for immediate UI reaction (optional but good for animation triggers)
-            io.emit('wheelAlert', result);
-        } else {
-            socket.emit('notification', { message: result.message, type: 'error' });
-        }
-    });
-
-    // Step 2: Winning team confirms ready
-    socket.on('wheelReady', ({ targetTeamId }) => {
-        console.log(`Wheel READY from T${targetTeamId}`);
-        game.setChallengeStatus('spinning');
-        io.emit('stateUpdate', game.getGameState());
-        io.emit('wheelSpin');
-    });
-
-    // Step 3: Wheel done / closed
-    socket.on('wheelDone', ({ teamId } = {}) => {
-        console.log(`Wheel DONE/CLOSED by T${teamId}`);
-        game.clearChallenge(teamId);
-        io.emit('stateUpdate', game.getGameState());
-    });
-
     socket.on('resetGame', () => {
         console.log('Reset Game requested');
         const newState = game.resetGame();
         io.emit('stateUpdate', newState);
         io.emit('notification', { message: '🔄 Game has been RESET!', type: 'warning' });
-    });
-
-    socket.on('setGameConfig', (config) => {
-        console.log('Game Config Update:', config);
-        if (game.setGameConfig(config)) {
-            io.emit('stateUpdate', game.getGameState());
-        }
     });
 
     socket.on('disconnect', () => {

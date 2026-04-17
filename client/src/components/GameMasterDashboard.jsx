@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-export default function GameMasterDashboard({ gameState, onUpdateTeam, onResetGame, onSetCourse, onSetGameConfig, onExit }) {
+export default function GameMasterDashboard({ gameState, onUpdateTeam, onResetGame, onSetCourse, onExit }) {
     const [showResetConfirm, setShowResetConfirm] = useState(false);
     const [editingTeam, setEditingTeam] = useState(null);
     const [editName, setEditName] = useState('');
@@ -13,9 +13,12 @@ export default function GameMasterDashboard({ gameState, onUpdateTeam, onResetGa
         loadArchives();
     }, []);
 
+    const SERVER_URL = import.meta.env.VITE_SERVER_URL
+        || (import.meta.env.DEV ? 'http://localhost:3001' : window.location.origin);
+
     const loadArchives = async () => {
         try {
-            const response = await fetch('http://localhost:3001/api/archives');
+            const response = await fetch(`${SERVER_URL}/api/archives`);
             const data = await response.json();
             setArchives(data);
         } catch (error) {
@@ -25,7 +28,7 @@ export default function GameMasterDashboard({ gameState, onUpdateTeam, onResetGa
 
     const viewArchive = async (filename) => {
         try {
-            const response = await fetch(`http://localhost:3001/api/archives/${filename}`);
+            const response = await fetch(`${SERVER_URL}/api/archives/${filename}`);
             const data = await response.json();
             setSelectedArchive(data);
         } catch (error) {
@@ -35,14 +38,6 @@ export default function GameMasterDashboard({ gameState, onUpdateTeam, onResetGa
 
     const handleCourseChange = (e) => {
         onSetCourse(e.target.value);
-    };
-
-    const handleMaxSpinsChange = (e) => {
-        onSetGameConfig({ maxSpins: e.target.value });
-    };
-
-    const handleWheelUnlockChange = (e) => {
-        onSetGameConfig({ wheelUnlocksAfterHole: e.target.value });
     };
 
     const startEditTeam = (team) => {
@@ -112,35 +107,8 @@ export default function GameMasterDashboard({ gameState, onUpdateTeam, onResetGa
                         >
                             <option value="waldviertel">🌲 Course Waldviertel (Par 72)</option>
                             <option value="haugschlag">⛳ Course Haugschlag (Par 72)</option>
+                            <option value="monachus">🏞️ Course Monachus (Par 73)</option>
                         </select>
-                    </div>
-
-                    <div>
-                        <label className="block mb-2 font-bold">Wheel Unlocks After Hole</label>
-                        <input
-                            type="number"
-                            min="1"
-                            max="18"
-                            value={gameState.wheelUnlocksAfterHole || 3}
-                            onChange={handleWheelUnlockChange}
-                            disabled={gameState.teams.some(team => Object.keys(team.scores || {}).length > 0)}
-                            className="w-full p-3 rounded bg-slate-700 text-white border border-slate-600 disabled:opacity-50 disabled:cursor-not-allowed"
-                            title={gameState.teams.some(team => Object.keys(team.scores || {}).length > 0) ? "Reset game to change this setting" : ""}
-                        />
-                    </div>
-
-                    <div>
-                        <label className="block mb-2 font-bold">Max Wheel Spins per Team</label>
-                        <input
-                            type="number"
-                            min="0"
-                            max="10"
-                            value={gameState.maxSpins || 2}
-                            onChange={handleMaxSpinsChange}
-                            disabled={gameState.teams.some(team => Object.keys(team.scores || {}).length > 0)}
-                            className="w-full p-3 rounded bg-slate-700 text-white border border-slate-600 disabled:opacity-50 disabled:cursor-not-allowed"
-                            title={gameState.teams.some(team => Object.keys(team.scores || {}).length > 0) ? "Reset game to change this setting" : ""}
-                        />
                     </div>
                 </div>
             </div>
@@ -178,7 +146,6 @@ export default function GameMasterDashboard({ gameState, onUpdateTeam, onResetGa
                                                 <span>🏆 Winner: <span className="text-emerald-400 font-semibold">{archive.summary.winner}</span></span>
                                                 <span>📊 Score: <span className="font-semibold">{archive.summary.winningScore}</span></span>
                                                 <span>⛳ Holes: <span className="font-semibold">{archive.summary.holesCompleted}</span></span>
-                                                <span>🎡 Spins: <span className="font-semibold">{archive.summary.totalWheelSpins}</span></span>
                                             </div>
                                         </div>
                                         <div className="text-3xl">📊</div>
@@ -293,7 +260,6 @@ export default function GameMasterDashboard({ gameState, onUpdateTeam, onResetGa
                                 <span>🏆 Winner: <strong className="text-emerald-400">{selectedArchive.summary.winner}</strong></span>
                                 <span>📊 Score: <strong>{selectedArchive.summary.winningScore}</strong></span>
                                 <span>⛳ Holes: <strong>{selectedArchive.summary.holesCompleted}</strong></span>
-                                <span>🎡 Spins: <strong>{selectedArchive.summary.totalWheelSpins}</strong></span>
                             </div>
 
                             <div className="text-gray-400">
