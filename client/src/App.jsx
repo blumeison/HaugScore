@@ -73,6 +73,15 @@ function App() {
     socket.on('stateUpdate', (newState) => {
       console.log('State updated');
       setGameState(newState);
+
+      // If my team no longer exists (e.g. GM reduced team count), clear localStorage
+      // and send the user back to the welcome screen so they can pick a valid team.
+      const savedId = localStorage.getItem('myTeamId');
+      if (savedId && !newState.teams.some(t => t.id === parseInt(savedId))) {
+        localStorage.removeItem('myTeamId');
+        setMyTeamId(null);
+        setViewMode('welcome');
+      }
     });
 
     socket.on('notification', (msg) => {
@@ -125,6 +134,10 @@ function App() {
 
   const handleResetGame = () => {
     socket.emit('resetGame');
+  };
+
+  const handleSetTeamCount = (count) => {
+    socket.emit('setTeamCount', count);
   };
 
   const handleSetCourse = (courseId) => {
@@ -187,6 +200,7 @@ function App() {
           onUpdateTeam={handleUpdateTeam}
           onResetGame={handleResetGame}
           onSetCourse={handleSetCourse}
+          onSetTeamCount={handleSetTeamCount}
           onExit={() => setViewMode('welcome')}
         />
       </>

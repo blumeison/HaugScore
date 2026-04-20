@@ -35,7 +35,7 @@ export default function TeamSelector({ gameState, onSelectTeam }) {
             zIndex: 9999
         }}>
             <h1>🏌️ Select Your Team</h1>
-            <div style={{ display: 'flex', gap: '2rem', marginTop: '2rem' }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '2rem', marginTop: '2rem', padding: '0 1rem' }}>
                 {gameState.teams.map(t => (
                     <button
                         key={t.id}

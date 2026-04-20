@@ -134,6 +134,13 @@ io.on('connection', (socket) => {
         }
     });
 
+    socket.on('setTeamCount', (count) => {
+        console.log(`Set team count: ${count}`);
+        if (game.setTeamCount(count)) {
+            io.emit('stateUpdate', game.getGameState());
+        }
+    });
+
     socket.on('resetGame', () => {
         console.log('Reset Game requested');
         const newState = game.resetGame();

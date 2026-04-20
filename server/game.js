@@ -9,12 +9,24 @@ if (!fs.existsSync(DATA_DIR)) {
 }
 const DATA_FILE = path.join(DATA_DIR, 'data.json');
 
-// Initial Teams for Scramble
-const INITIAL_TEAMS = [
-    { id: 1, name: "Team 1", logo: null, color: '#ef4444', scores: {}, currentHole: 1 },
-    { id: 2, name: "Team 2", logo: null, color: '#3b82f6', scores: {}, currentHole: 1 },
-    { id: 3, name: "Team 3", logo: null, color: '#22c55e', scores: {}, currentHole: 1 },
-];
+// Team presets by count. Colors are kept stable across sizes so Team 1 is always red,
+// Team 2 always blue, etc. — simplifies muscle memory across rounds.
+const TEAM_COLORS = ['#ef4444', '#3b82f6', '#22c55e', '#f59e0b'];
+const VALID_TEAM_COUNTS = [2, 3, 4];
+const DEFAULT_TEAM_COUNT = 3;
+
+function buildTeams(count) {
+    return Array.from({ length: count }, (_, i) => ({
+        id: i + 1,
+        name: `Team ${i + 1}`,
+        logo: null,
+        color: TEAM_COLORS[i],
+        scores: {},
+        currentHole: 1,
+    }));
+}
+
+const INITIAL_TEAMS = buildTeams(DEFAULT_TEAM_COUNT);
 
 const COURSES = {
     waldviertel: {
@@ -149,6 +161,34 @@ function setCourse(courseId) {
     return false;
 }
 
+function hasAnyScores() {
+    return gameState.teams.some(t => Object.keys(t.scores || {}).length > 0);
+}
+
+function setTeamCount(count) {
+    const n = parseInt(count);
+    if (!VALID_TEAM_COUNTS.includes(n)) return false;
+    if (hasAnyScores()) return false; // locked during active round
+    if (n === gameState.teams.length) return true; // no-op
+
+    // Preserve existing teams' names/logos up to min(old, new); fill the rest with defaults
+    const existing = gameState.teams;
+    gameState.teams = Array.from({ length: n }, (_, i) => {
+        const prev = existing[i];
+        return {
+            id: i + 1,
+            name: prev?.name || `Team ${i + 1}`,
+            logo: prev?.logo || null,
+            color: TEAM_COLORS[i],
+            scores: {},
+            currentHole: 1,
+        };
+    });
+    gameState.log.push(`Team count changed to ${n}`);
+    saveState();
+    return true;
+}
+
 function updateTeam(id, name, logo) {
     const team = gameState.teams.find(t => t.id === parseInt(id));
     if (team) {
@@ -236,5 +276,7 @@ module.exports = {
     updateScore,
     resetGame,
     setCourse,
-    COURSES
+    setTeamCount,
+    COURSES,
+    VALID_TEAM_COUNTS
 };

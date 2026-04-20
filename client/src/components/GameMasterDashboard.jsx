@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-export default function GameMasterDashboard({ gameState, onUpdateTeam, onResetGame, onSetCourse, onExit }) {
+export default function GameMasterDashboard({ gameState, onUpdateTeam, onResetGame, onSetCourse, onSetTeamCount, onExit }) {
     const [showResetConfirm, setShowResetConfirm] = useState(false);
     const [editingTeam, setEditingTeam] = useState(null);
     const [editName, setEditName] = useState('');
@@ -39,6 +39,12 @@ export default function GameMasterDashboard({ gameState, onUpdateTeam, onResetGa
     const handleCourseChange = (e) => {
         onSetCourse(e.target.value);
     };
+
+    const handleTeamCountChange = (e) => {
+        onSetTeamCount(parseInt(e.target.value));
+    };
+
+    const roundActive = gameState.teams.some(team => Object.keys(team.scores || {}).length > 0);
 
     const startEditTeam = (team) => {
         setEditingTeam(team);
@@ -88,7 +94,7 @@ export default function GameMasterDashboard({ gameState, onUpdateTeam, onResetGa
             <div className="card mb-8" style={{ background: '#1e293b', padding: '1.5rem', borderRadius: '1rem' }}>
                 <div className="flex justify-between items-center mb-4">
                     <h2 className="text-emerald-400 m-0">⚙️ Game Setup</h2>
-                    {gameState.teams.some(team => Object.keys(team.scores || {}).length > 0) && (
+                    {roundActive && (
                         <span className="text-xs bg-yellow-900 text-yellow-200 px-2 py-1 rounded border border-yellow-700">
                             🔒 Settings locked while round is active
                         </span>
@@ -101,13 +107,28 @@ export default function GameMasterDashboard({ gameState, onUpdateTeam, onResetGa
                         <select
                             value={gameState.course?.id || 'waldviertel'}
                             onChange={handleCourseChange}
-                            disabled={gameState.teams.some(team => Object.keys(team.scores || {}).length > 0)}
+                            disabled={roundActive}
                             className="w-full p-3 rounded bg-slate-700 text-white border border-slate-600 disabled:opacity-50 disabled:cursor-not-allowed"
-                            title={gameState.teams.some(team => Object.keys(team.scores || {}).length > 0) ? "Reset game to change course" : ""}
+                            title={roundActive ? "Reset game to change course" : ""}
                         >
                             <option value="waldviertel">🌲 Course Waldviertel (Par 72)</option>
                             <option value="haugschlag">⛳ Course Haugschlag (Par 72)</option>
                             <option value="monachus">🏞️ Course Monachus (Par 73)</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label className="block mb-2 font-bold">Number of Teams</label>
+                        <select
+                            value={gameState.teams.length}
+                            onChange={handleTeamCountChange}
+                            disabled={roundActive}
+                            className="w-full p-3 rounded bg-slate-700 text-white border border-slate-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                            title={roundActive ? "Reset game to change team count" : ""}
+                        >
+                            <option value={2}>2 Teams</option>
+                            <option value={3}>3 Teams</option>
+                            <option value={4}>4 Teams</option>
                         </select>
                     </div>
                 </div>
