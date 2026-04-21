@@ -5,6 +5,9 @@ import TeamSetup from './components/TeamSetup';
 import TeamSelector from './components/TeamSelector';
 import WelcomeScreen from './components/WelcomeScreen';
 import GameMasterDashboard from './components/GameMasterDashboard';
+import PlayerProfile from './components/PlayerProfile';
+import PlayerTournamentView from './components/PlayerTournamentView';
+import { AuthProvider, useAuth } from './AuthContext';
 
 // Server URL resolution:
 //   - If VITE_SERVER_URL is set at build time → use it (useful for split deploys)
@@ -13,7 +16,8 @@ import GameMasterDashboard from './components/GameMasterDashboard';
 const SERVER_URL = import.meta.env.VITE_SERVER_URL
     || (import.meta.env.DEV ? 'http://localhost:3001' : window.location.origin);
 
-// Socket with aggressive reconnection settings for flaky mobile/tablet connections
+// Socket with aggressive reconnection settings for flaky mobile/tablet
+// connections. `auth` is populated by AuthContext before (re)connection.
 const socket = io(SERVER_URL, {
   reconnection: true,
   reconnectionDelay: 1000,
@@ -21,27 +25,28 @@ const socket = io(SERVER_URL, {
   reconnectionAttempts: Infinity,
   timeout: 10000,
   transports: ['websocket', 'polling'],
+  autoConnect: false, // AuthContext triggers connect after setting auth
 });
 window.socket = socket;
 
-function App() {
+function AppInner() {
+  const { isSignedIn, isAdmin, isApproved, hasProfile, player, me } = useAuth();
+
   const [gameState, setGameState] = useState(null);
   const [myTeamId, setMyTeamId] = useState(null);
-  const [viewMode, setViewMode] = useState('loading');
+  const [viewMode, setViewMode] = useState('welcome');
   const [showSetup, setShowSetup] = useState(false);
   const [notification, setNotification] = useState(null);
   const [connectionStatus, setConnectionStatus] = useState('connecting');
   const notificationTimer = useRef(null);
 
-  // ── Routing init ──────────────────────────────────────────────────────────
+  // Note: socket.connect() is owned by AuthProvider so the token is always
+  // set on the handshake. Don't call socket.connect() here.
+
+  // ── Routing init (restore team binding) ───────────────────────────────────
   useEffect(() => {
     const savedTeamId = localStorage.getItem('myTeamId');
-    if (savedTeamId) {
-      setMyTeamId(parseInt(savedTeamId));
-      setViewMode('team');
-    } else {
-      setViewMode('welcome');
-    }
+    if (savedTeamId) setMyTeamId(parseInt(savedTeamId));
   }, []);
 
   // ── Socket events ─────────────────────────────────────────────────────────
@@ -71,22 +76,18 @@ function App() {
     });
 
     socket.on('stateUpdate', (newState) => {
-      console.log('State updated');
       setGameState(newState);
 
       // If my team no longer exists (e.g. GM reduced team count), clear localStorage
-      // and send the user back to the welcome screen so they can pick a valid team.
       const savedId = localStorage.getItem('myTeamId');
       if (savedId && !newState.teams.some(t => t.id === parseInt(savedId))) {
         localStorage.removeItem('myTeamId');
         setMyTeamId(null);
-        setViewMode('welcome');
+        if (viewMode === 'team') setViewMode('welcome');
       }
     });
 
-    socket.on('notification', (msg) => {
-      showNotification(msg);
-    });
+    socket.on('notification', (msg) => showNotification(msg));
 
     return () => {
       socket.off('connect');
@@ -97,13 +98,12 @@ function App() {
       socket.off('stateUpdate');
       socket.off('notification');
     };
-  }, []);
+  }, [viewMode]);
 
   // ── Page Visibility API: re-sync when tablet wakes from sleep ─────────────
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
-        console.log('Tab became visible — checking connection');
         if (!socket.connected) {
           setConnectionStatus('reconnecting');
           socket.connect();
@@ -112,7 +112,6 @@ function App() {
         }
       }
     };
-
     document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, []);
@@ -124,34 +123,41 @@ function App() {
     notificationTimer.current = setTimeout(() => setNotification(null), 3000);
   };
 
-  const handleUpdateScore = (teamId, holeNumber, score) => {
-    socket.emit('updateScore', { teamId, holeNumber, score });
+  const handleUpdateScore = (teamId, holeNumber, score) => socket.emit('updateScore', { teamId, holeNumber, score });
+  const handleUpdateTeam = (teamId, name, logo) => socket.emit('updateTeam', { teamId, name, logo });
+  const handleResetGame = () => socket.emit('resetGame');
+  const handleSetTeamCount = (count) => socket.emit('setTeamCount', count);
+  const handleSetCourse = (courseId) => socket.emit('setCourse', courseId);
+  const handleSetPlayerApproval = (sub, approved) => socket.emit('setPlayerApproval', { sub, approved });
+  const handleDeletePlayer = (sub) => socket.emit('deletePlayer', sub);
+  const handleUpdatePlayer = (patch) => {
+    // patch: { sub?, name?, logo?, hcp? } — sub defaults to self server-side
+    socket.emit('updatePlayer', patch);
   };
 
-  const handleUpdateTeam = (teamId, name, logo) => {
-    socket.emit('updateTeam', { teamId, name, logo });
-  };
-
-  const handleResetGame = () => {
-    socket.emit('resetGame');
-  };
-
-  const handleSetTeamCount = (count) => {
-    socket.emit('setTeamCount', count);
-  };
-
-  const handleSetCourse = (courseId) => {
-    fetch(`${SERVER_URL}/api/set-course`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ courseId })
-    }).catch(err => console.error("Failed to set course:", err));
+  // ── Tournament ops (all socket-based, permissions enforced server-side) ──
+  const tournamentOps = {
+    create: (payload) => socket.emit('createTournament', payload),
+    update: (id, patch) => socket.emit('updateTournament', { id, patch }),
+    remove: (id) => socket.emit('deleteTournament', id),
+    addRound: (tournamentId, { courseId, date }) =>
+      socket.emit('addRound', { tournamentId, courseId, date }),
+    removeRound: (tournamentId, roundId) =>
+      socket.emit('removeRound', { tournamentId, roundId }),
+    setRoundStatus: (tournamentId, roundId, status) =>
+      socket.emit('setRoundStatus', { tournamentId, roundId, status }),
+    setScore: (tournamentId, roundId, playerSub, patch) =>
+      socket.emit('setScore', { tournamentId, roundId, playerSub, ...patch }),
+    clearScore: (tournamentId, roundId, playerSub) =>
+      socket.emit('clearScore', { tournamentId, roundId, playerSub }),
+    submitScore: (tournamentId, roundId, patch) =>
+      socket.emit('submitScore', { tournamentId, roundId, ...patch }),
+    updateScrambleMeta: (patch) => socket.emit('updateScrambleMeta', patch),
   };
 
   // ── Connection status banner ──────────────────────────────────────────────
   const renderConnectionBanner = () => {
     if (connectionStatus === 'connected') return null;
-
     const isReconnecting = connectionStatus === 'reconnecting';
     return (
       <div style={{
@@ -162,14 +168,12 @@ function App() {
         letterSpacing: '0.02em',
         boxShadow: '0 2px 8px rgba(0,0,0,0.4)'
       }}>
-        {isReconnecting
-          ? '⟳ Reconnecting to server...'
-          : '⚠ No connection — scores are paused'}
+        {isReconnecting ? '⟳ Reconnecting to server...' : '⚠ No connection — scores are paused'}
       </div>
     );
   };
 
-  // ── Loading / routing ─────────────────────────────────────────────────────
+  // ── Loading ───────────────────────────────────────────────────────────────
   if (!gameState) {
     return (
       <div className="loading" style={{ textAlign: 'center', marginTop: '3rem', fontSize: '1.5rem' }}>
@@ -179,13 +183,53 @@ function App() {
     );
   }
 
+  // ── Route guards: block views the user shouldn't be on ────────────────────
+  // If a signed-out user somehow lands on a gated view, kick them home.
+  if ((viewMode === 'profile' || viewMode === 'gm' || viewMode === 'join' || viewMode === 'team' || viewMode === 'tournament') && !isSignedIn) {
+    setViewMode('welcome');
+    return null;
+  }
+  // GM needs admin; Join/Team need approval.
+  if (viewMode === 'gm' && !isAdmin) {
+    setViewMode('welcome');
+    return null;
+  }
+  if ((viewMode === 'join' || viewMode === 'team') && !isApproved && !isAdmin) {
+    setViewMode('welcome');
+    return null;
+  }
+  if (viewMode === 'tournament' && !isApproved && !isAdmin) {
+    setViewMode('welcome');
+    return null;
+  }
+
+  // ── Views ─────────────────────────────────────────────────────────────────
+
   if (viewMode === 'welcome') {
     return (
       <>
         {renderConnectionBanner()}
         <WelcomeScreen
           onJoinGame={() => setViewMode('join')}
+          onPlayerProfile={() => setViewMode('profile')}
           onGameMaster={() => setViewMode('gm')}
+          onTournaments={() => setViewMode('tournament')}
+        />
+      </>
+    );
+  }
+
+  if (viewMode === 'profile') {
+    return (
+      <>
+        {renderConnectionBanner()}
+        <PlayerProfile
+          gameState={gameState}
+          player={player}
+          isApproved={isApproved}
+          hasProfile={hasProfile}
+          onUpdatePlayer={handleUpdatePlayer}
+          onExit={() => setViewMode('welcome')}
         />
       </>
     );
@@ -201,6 +245,24 @@ function App() {
           onResetGame={handleResetGame}
           onSetCourse={handleSetCourse}
           onSetTeamCount={handleSetTeamCount}
+          onUpdatePlayer={handleUpdatePlayer}
+          onSetPlayerApproval={handleSetPlayerApproval}
+          onDeletePlayer={handleDeletePlayer}
+          tournamentOps={tournamentOps}
+          onExit={() => setViewMode('welcome')}
+        />
+      </>
+    );
+  }
+
+  if (viewMode === 'tournament') {
+    return (
+      <>
+        {renderConnectionBanner()}
+        <PlayerTournamentView
+          gameState={gameState}
+          player={player}
+          tournamentOps={tournamentOps}
           onExit={() => setViewMode('welcome')}
         />
       </>
@@ -223,7 +285,7 @@ function App() {
     );
   }
 
-  // Default: Team View
+  // Default: Team View (scramble)
   return (
     <div className="app">
       {renderConnectionBanner()}
@@ -246,6 +308,11 @@ function App() {
         myTeamId={myTeamId}
         onUpdateScore={handleUpdateScore}
         onOpenSetup={() => setShowSetup(true)}
+        onExit={() => {
+          localStorage.removeItem('myTeamId');
+          setMyTeamId(null);
+          setViewMode('welcome');
+        }}
       />
 
       {showSetup && (
@@ -271,4 +338,10 @@ function App() {
   );
 }
 
-export default App;
+export default function App() {
+  return (
+    <AuthProvider socket={socket}>
+      <AppInner />
+    </AuthProvider>
+  );
+}

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import TournamentSection from './TournamentSection';
 
-export default function GameMasterDashboard({ gameState, onUpdateTeam, onResetGame, onSetCourse, onSetTeamCount, onExit }) {
+export default function GameMasterDashboard({ gameState, onUpdateTeam, onResetGame, onSetCourse, onSetTeamCount, onUpdatePlayer, onSetPlayerApproval, onDeletePlayer, tournamentOps, onExit }) {
     const [showResetConfirm, setShowResetConfirm] = useState(false);
     const [editingTeam, setEditingTeam] = useState(null);
     const [editName, setEditName] = useState('');
@@ -113,7 +114,7 @@ export default function GameMasterDashboard({ gameState, onUpdateTeam, onResetGa
                         >
                             <option value="waldviertel">🌲 Course Waldviertel (Par 72)</option>
                             <option value="haugschlag">⛳ Course Haugschlag (Par 72)</option>
-                            <option value="monachus">🏞️ Course Monachus (Par 73)</option>
+                            <option value="monachus">🇨🇿 Course Monachus (Par 73)</option>
                         </select>
                     </div>
 
@@ -230,6 +231,22 @@ export default function GameMasterDashboard({ gameState, onUpdateTeam, onResetGa
                 )}
             </div>
 
+            {/* HCP Stableford Tournament management */}
+            <TournamentSection
+                tournaments={gameState.tournaments || []}
+                tournamentOps={tournamentOps}
+                courses={gameState.courses || {}}
+                players={gameState.players || []}
+            />
+
+            {/* Players (HCP tournament roster) — pending first, then approved */}
+            <PlayersSection
+                players={gameState.players || []}
+                onUpdatePlayer={onUpdatePlayer}
+                onSetPlayerApproval={onSetPlayerApproval}
+                onDeletePlayer={onDeletePlayer}
+            />
+
             {/* Danger Zone */}
             <div className="card" style={{ background: '#450a0a', padding: '1.5rem', borderRadius: '1rem', border: '1px solid #ef4444' }}>
                 <h2 className="mb-4 text-red-400">⚠️ Danger Zone</h2>
@@ -290,6 +307,156 @@ export default function GameMasterDashboard({ gameState, onUpdateTeam, onResetGa
                     </div>
                 </div>
             )}
+        </div>
+    );
+}
+
+// ── Players roster (pending first, then approved) ──────────────────────────
+function PlayersSection({ players, onUpdatePlayer, onSetPlayerApproval, onDeletePlayer }) {
+    // Pending first, then by name
+    const sorted = [...players].sort((a, b) => {
+        if (!!a.approved !== !!b.approved) return a.approved ? 1 : -1;
+        return (a.name || '').localeCompare(b.name || '');
+    });
+
+    const pendingCount = players.filter(p => !p.approved).length;
+
+    return (
+        <div className="card mb-8" style={{ background: '#1e293b', padding: '1.5rem', borderRadius: '1rem' }}>
+            <div className="flex justify-between items-center mb-4">
+                <h2 className="text-pink-400 m-0">🎟️ Players ({players.length})</h2>
+                {pendingCount > 0 && (
+                    <span className="text-xs bg-sky-900 text-sky-200 px-2 py-1 rounded border border-sky-700">
+                        {pendingCount} pending approval
+                    </span>
+                )}
+            </div>
+
+            {players.length === 0 ? (
+                <p className="text-gray-400 text-center py-4" style={{ margin: 0 }}>
+                    No players yet. Players appear here after they sign in with Google.
+                </p>
+            ) : (
+                <div className="grid gap-2">
+                    {sorted.map(p => (
+                        <PlayerRow
+                            key={p.sub}
+                            player={p}
+                            onUpdatePlayer={onUpdatePlayer}
+                            onSetPlayerApproval={onSetPlayerApproval}
+                            onDeletePlayer={onDeletePlayer}
+                        />
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+}
+
+function PlayerRow({ player, onUpdatePlayer, onSetPlayerApproval, onDeletePlayer }) {
+    const [hcp, setHcp] = useState(player.hcp ?? '');
+    const [confirmDelete, setConfirmDelete] = useState(false);
+
+    useEffect(() => { setHcp(player.hcp ?? ''); }, [player.hcp]);
+
+    const commitHcp = () => {
+        if (hcp === '' || hcp === null) return;
+        const n = parseFloat(hcp);
+        if (isNaN(n) || n < 0 || n > 54) {
+            setHcp(player.hcp ?? '');
+            return;
+        }
+        if (n !== player.hcp) onUpdatePlayer({ sub: player.sub, hcp: n });
+    };
+
+    return (
+        <div
+            className="p-3 bg-slate-700 rounded"
+            style={{
+                borderLeft: player.approved ? '3px solid #22c55e' : '3px solid #0ea5e9',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.75rem',
+                flexWrap: 'wrap',
+            }}
+        >
+            {/* Avatar */}
+            {player.logo ? (
+                <img src={player.logo} alt={player.name} style={{ width: 44, height: 44, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+            ) : (
+                <div style={{ width: 44, height: 44, borderRadius: '50%', background: '#64748b', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontWeight: 'bold' }}>
+                    {(player.name || '?').charAt(0).toUpperCase()}
+                </div>
+            )}
+
+            {/* Identity — takes remaining space, truncates cleanly */}
+            <div style={{ minWidth: 0, flex: '1 1 180px' }}>
+                <div className="font-bold" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {player.name}
+                    {!player.approved && (
+                        <span className="text-xs" style={{ marginLeft: '0.5rem', background: '#0ea5e944', color: '#0ea5e9', padding: '0.15rem 0.5rem', borderRadius: '0.5rem' }}>
+                            pending
+                        </span>
+                    )}
+                </div>
+                <div className="text-xs text-gray-400" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {player.email}
+                </div>
+            </div>
+
+            {/* Controls — wrap as a group onto a new line on narrow screens */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexShrink: 0, marginLeft: 'auto' }}>
+                <label className="text-xs text-gray-300">HCP</label>
+                <input
+                    type="text"
+                    inputMode="decimal"
+                    value={hcp}
+                    onChange={e => setHcp(e.target.value.replace(',', '.'))}
+                    onBlur={commitHcp}
+                    onKeyDown={e => { if (e.key === 'Enter') e.currentTarget.blur(); }}
+                    className="p-1 rounded bg-slate-800 text-white border border-slate-600"
+                    style={{ width: '4rem', textAlign: 'center' }}
+                    placeholder="—"
+                />
+
+                <button
+                    onClick={() => onSetPlayerApproval(player.sub, !player.approved)}
+                    className="btn btn-sm"
+                    style={{ background: player.approved ? '#475569' : '#22c55e', whiteSpace: 'nowrap' }}
+                    title={player.approved ? 'Revoke approval' : 'Approve for scramble'}
+                >
+                    {player.approved ? '↩ Revoke' : '✓ Approve'}
+                </button>
+
+                {confirmDelete ? (
+                    <>
+                        <button
+                            onClick={() => { onDeletePlayer(player.sub); setConfirmDelete(false); }}
+                            className="btn btn-sm"
+                            style={{ background: '#dc2626', whiteSpace: 'nowrap' }}
+                            title="Confirm delete"
+                        >
+                            Sure?
+                        </button>
+                        <button
+                            onClick={() => setConfirmDelete(false)}
+                            className="btn btn-sm"
+                            style={{ background: '#475569' }}
+                        >
+                            ✕
+                        </button>
+                    </>
+                ) : (
+                    <button
+                        onClick={() => setConfirmDelete(true)}
+                        className="btn btn-sm"
+                        style={{ background: '#7f1d1d' }}
+                        title="Delete player"
+                    >
+                        🗑
+                    </button>
+                )}
+            </div>
         </div>
     );
 }

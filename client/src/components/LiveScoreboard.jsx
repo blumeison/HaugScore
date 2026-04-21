@@ -1,97 +1,103 @@
 import React from 'react';
 
+// Scramble live scoreboard — uses the SAME unified scorecard visual language
+// as the tournament round detail (cream table, yellow PAR row, coloured
+// sc-cell--* strokes cells, tabular numbers).
+
 export default function LiveScoreboard({ gameState, myTeamId }) {
     const course = gameState.course;
     const teams = gameState.teams;
 
-    // Split into front 9 and back 9
     const frontNine = course.holes.slice(0, 9);
     const backNine = course.holes.slice(9, 18);
 
-    const getScoreColor = (score, par) => {
-        if (!score) return '';
-        const diff = score - par;
-        if (diff <= -2) return 'eagle'; // Eagle or better
-        if (diff === -1) return 'birdie';
-        if (diff === 0) return 'par';
-        if (diff === 1) return 'bogey';
-        return 'double-bogey'; // Double bogey or worse
-    };
+    return (
+        <div className="scorecard-shell live-scoreboard">
+            <div className="scorecard-shell__title">
+                🏌️ {course.name} — Live Scoreboard 🏌️
+            </div>
 
-    const calculateTotal = (team, holes) => {
-        return holes.reduce((sum, hole) => {
-            const score = team.scores[hole.number];
-            return sum + (score || 0);
-        }, 0);
-    };
+            <NineBoard holes={frontNine} teams={teams} myTeamId={myTeamId} label="Front 9" />
+            <NineBoard holes={backNine} teams={teams} myTeamId={myTeamId} label="Back 9" />
 
-    const calculatePar = (holes) => {
-        return holes.reduce((sum, hole) => sum + hole.par, 0);
-    };
+            <div className="scorecard-legend">
+                <span className="legend-item"><span className="sc-cell--eagle" style={{ padding: '2px 6px', borderRadius: 3 }}>Eagle</span></span>
+                <span className="legend-item"><span className="sc-cell--birdie" style={{ padding: '2px 6px', borderRadius: 3 }}>Birdie</span></span>
+                <span className="legend-item"><span className="sc-cell--par" style={{ padding: '2px 6px', borderRadius: 3, border: '1px solid #ddd' }}>Par</span></span>
+                <span className="legend-item"><span className="sc-cell--bogey" style={{ padding: '2px 6px', borderRadius: 3 }}>Bogey</span></span>
+                <span className="legend-item"><span className="sc-cell--double" style={{ padding: '2px 6px', borderRadius: 3 }}>Double+</span></span>
+            </div>
+        </div>
+    );
+}
 
-    const renderNine = (holes, title) => {
-        const parTotal = calculatePar(holes);
+function cellClassFor(score, par) {
+    if (!score) return 'sc-cell--empty';
+    const d = score - par;
+    if (d <= -2) return 'sc-cell--eagle';
+    if (d === -1) return 'sc-cell--birdie';
+    if (d === 0) return 'sc-cell--par';
+    if (d === 1) return 'sc-cell--bogey';
+    return 'sc-cell--double';
+}
 
-        return (
-            <div className="scoreboard-nine">
-                <div className="scoreboard-header">
-                    <h3>{title}</h3>
-                </div>
-                <table className="scoreboard-table">
+function NineBoard({ holes, teams, myTeamId, label }) {
+    const parTotal = holes.reduce((s, h) => s + h.par, 0);
+
+    return (
+        <div className="scorecard-nine">
+            <div className="scorecard-nine__header">{label}</div>
+            <div style={{ overflowX: 'auto' }}>
+                <table className="scorecard">
                     <thead>
-                        <tr className="header-row">
-                            <th className="team-col">Team</th>
-                            {holes.map(hole => (
-                                <th key={hole.number} className="hole-col">
-                                    <div className="hole-number">{hole.number}</div>
-                                    <div className="hole-hcp">HCP {hole.hcp}</div>
+                        <tr>
+                            <th className="label-col scorecard__team-col">Team</th>
+                            {holes.map(h => (
+                                <th key={h.number}>
+                                    <div className="scorecard__hole-num">{h.number}</div>
                                 </th>
                             ))}
                             <th className="total-col">Total</th>
                         </tr>
-                        <tr className="par-row">
-                            <td className="par-label">PAR</td>
-                            {holes.map(hole => (
-                                <td key={hole.number} className="par-value">{hole.par}</td>
-                            ))}
-                            <td className="par-total">{parTotal}</td>
+                        <tr className="scorecard__par-row">
+                            <td className="label-col">PAR</td>
+                            {holes.map(h => <td key={h.number}>{h.par}</td>)}
+                            <td className="total-col">{parTotal}</td>
                         </tr>
                     </thead>
                     <tbody>
                         {teams.map(team => {
-                            const total = calculateTotal(team, holes);
-
-                            // Calculate par differential based ONLY on holes played in this nine
-                            const holesPlayed = holes.filter(hole => team.scores[hole.number] !== undefined);
-                            const parForHolesPlayed = holesPlayed.reduce((sum, hole) => sum + hole.par, 0);
-                            const parDiff = total - parForHolesPlayed;
+                            const total = holes.reduce((s, h) => s + (team.scores[h.number] || 0), 0);
+                            const holesPlayed = holes.filter(h => team.scores[h.number] !== undefined);
+                            const parPlayed = holesPlayed.reduce((s, h) => s + h.par, 0);
+                            const diff = total - parPlayed;
+                            const isMe = team.id === myTeamId;
 
                             return (
-                                <tr key={team.id} className={team.id === myTeamId ? 'my-team' : ''}>
-                                    <td className="team-name">
+                                <tr key={team.id} className={isMe ? 'is-self' : ''}>
+                                    <td className="label-col scorecard__team-col">
                                         <div className="team-info">
                                             {team.logo ? (
                                                 <img src={team.logo} alt={team.name} className="team-mini-logo" />
                                             ) : (
-                                                <div className="team-mini-logo" style={{ background: team.color }}></div>
+                                                <div className="team-mini-logo" style={{ background: team.color }} />
                                             )}
                                             <span>{team.name}</span>
                                         </div>
                                     </td>
-                                    {holes.map(hole => {
-                                        const score = team.scores[hole.number];
-                                        const colorClass = getScoreColor(score, hole.par);
+                                    {holes.map(h => {
+                                        const score = team.scores[h.number];
                                         return (
-                                            <td key={hole.number} className={`score-cell ${colorClass}`}>
-                                                {score || '-'}
+                                            <td key={h.number} className={cellClassFor(score, h.par)}>
+                                                {score || '—'}
                                             </td>
                                         );
                                     })}
-                                    <td className="team-total">
-                                        <span className="total-score">{total || 0}</span>
-                                        {parDiff !== 0 && total > 0 && (
-                                            <span className={`total-diff ${parDiff > 0 ? 'over' : 'under'}`}>
-                                                {parDiff > 0 ? `+${parDiff}` : parDiff}
+                                    <td className="total-col">
+                                        <strong>{total || 0}</strong>
+                                        {diff !== 0 && total > 0 && (
+                                            <span className={`total-diff--${diff > 0 ? 'over' : 'under'}`} style={{ marginLeft: 4, fontSize: 'var(--fz-xs)' }}>
+                                                {diff > 0 ? `+${diff}` : diff}
                                             </span>
                                         )}
                                     </td>
@@ -100,27 +106,6 @@ export default function LiveScoreboard({ gameState, myTeamId }) {
                         })}
                     </tbody>
                 </table>
-            </div>
-        );
-    };
-
-    return (
-        <div className="live-scoreboard">
-            <div className="scoreboard-title">
-                <h2>🏌️ {course.name} - Live Scoreboard 🏌️</h2>
-            </div>
-
-            <div className="scoreboard-grid">
-                {renderNine(frontNine, "Front 9")}
-                {renderNine(backNine, "Back 9")}
-            </div>
-
-            <div className="scoreboard-legend">
-                <div className="legend-item eagle">Eagle or better</div>
-                <div className="legend-item birdie">Birdie</div>
-                <div className="legend-item par">Par</div>
-                <div className="legend-item bogey">Bogey</div>
-                <div className="legend-item double-bogey">Double Bogey+</div>
             </div>
         </div>
     );

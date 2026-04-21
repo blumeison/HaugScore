@@ -138,14 +138,14 @@ export default function MainView({ gameState, myTeamId, onUpdateScore, onOpenSet
                 </div>
             )}
 
-            {/* Leaderboard */}
-            <div className="scorecard">
-                <h3>Leaderboard</h3>
-                <table className="scorecard-table">
+            {/* Leaderboard — full-width, medals, avatars */}
+            <div className="scramble-leaderboard">
+                <h3>🏆 Leaderboard</h3>
+                <table className="standings-table">
                     <thead>
                         <tr>
-                            <th>#</th>
-                            <th>Team</th>
+                            <th className="t-left" style={{ width: '1%' }}>#</th>
+                            <th className="t-left">Team</th>
                             <th>Thru</th>
                             <th>Score</th>
                         </tr>
@@ -159,21 +159,27 @@ export default function MainView({ gameState, myTeamId, onUpdateScore, onOpenSet
                             }, 0);
                             const relativeScore = totalScore - parForPlayed;
                             const holesPlayed = Object.keys(t.scores).length;
+                            const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i + 1}`;
+                            const scoreClass = relativeScore > 0 ? 'score-cell--over'
+                                : relativeScore < 0 ? 'score-cell--under'
+                                : 'score-cell--even';
 
                             return (
-                                <tr key={t.id} className={t.id === myTeamId ? 'my-team-row' : ''}>
-                                    <td>{i + 1}</td>
-                                    <td style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                        {t.logo ? (
-                                            <img src={t.logo} alt={t.name} className="team-logo-small" />
-                                        ) : (
-                                            <div className="team-logo-small" style={{ background: t.color }}></div>
-                                        )}
-                                        {t.name}
+                                <tr key={t.id} className={t.id === myTeamId ? 'is-self' : ''}>
+                                    <td className="rank-cell">{medal}</td>
+                                    <td>
+                                        <div className="player-cell">
+                                            {t.logo ? (
+                                                <img src={t.logo} alt={t.name} className="player-cell__avatar" />
+                                            ) : (
+                                                <div className="player-cell__avatar" style={{ background: t.color }} />
+                                            )}
+                                            <span>{t.name}</span>
+                                        </div>
                                     </td>
                                     <td>{holesPlayed}</td>
-                                    <td className={relativeScore > 0 ? 'over-par' : relativeScore < 0 ? 'under-par' : 'even-par'}>
-                                        {holesPlayed === 0 ? '-' : relativeScore > 0 ? `+${relativeScore}` : relativeScore === 0 ? 'E' : relativeScore}
+                                    <td className={scoreClass}>
+                                        {holesPlayed === 0 ? '—' : relativeScore > 0 ? `+${relativeScore}` : relativeScore === 0 ? 'E' : relativeScore}
                                     </td>
                                 </tr>
                             );
