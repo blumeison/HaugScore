@@ -262,7 +262,6 @@ export default function ScoreUploadModal({ course, tournamentId, roundId, title,
 
                 {/* Hole grid */}
                 <div className="hole-grid">
-                    <div className="hole-grid__label">Strokes per hole</div>
                     <HoleGrid holes={frontNine} strokes={strokes} onChange={handleStrokeChange} preview={preview} inputRefs={inputRefs} />
                     <HoleGrid holes={backNine} strokes={strokes} onChange={handleStrokeChange} preview={preview} inputRefs={inputRefs} />
                 </div>
@@ -279,7 +278,9 @@ export default function ScoreUploadModal({ course, tournamentId, roundId, title,
                 <div className="upload-modal__actions">
                     <button
                         onClick={handleSubmit}
-                        className={`btn ${allHolesFilled ? 'btn--submit-ready' : 'btn--primary'}`}
+                        disabled={!allHolesFilled}
+                        title={allHolesFilled ? '' : 'Enter a stroke count for every hole first'}
+                        className={`btn ${allHolesFilled ? 'btn--submit-ready' : 'btn--subtle'}`}
                     >
                         ✓ Submit scores
                     </button>
@@ -293,30 +294,33 @@ export default function ScoreUploadModal({ course, tournamentId, roundId, title,
 }
 
 function HoleGrid({ holes, strokes, onChange, preview, inputRefs }) {
+    // All rows share identical left-padding so "Hole", "Par", "Strokes", "Pts"
+    // labels align vertically in a clean left edge.
+    const labelCell = { textAlign: 'left', padding: '0.3rem 0.25rem', minWidth: 70 };
+    const dataCell = { textAlign: 'center', padding: '0.3rem 0.15rem', minWidth: 40 };
+
     return (
         <div style={{ overflowX: 'auto', marginBottom: '0.5rem' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
                 <thead>
                     <tr style={{ color: 'var(--text-3)' }}>
-                        <th className="t-left" style={{ textAlign: 'left', padding: '0.25rem' }}>Hole</th>
+                        <th style={labelCell}>Hole</th>
                         {holes.map(h => (
-                            <th key={h.number} style={{ padding: '0.25rem', minWidth: 40 }}>{h.number}</th>
+                            <th key={h.number} style={dataCell}>{h.number}</th>
                         ))}
                     </tr>
-                    <tr style={{ color: 'var(--text-muted)', fontSize: '0.7rem' }}>
-                        <td style={{ padding: '0.15rem' }}>Par</td>
+                    <tr style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>
+                        <td style={labelCell}>Par</td>
                         {holes.map(h => (
-                            <td key={h.number} style={{ textAlign: 'center', padding: '0.15rem' }}>
-                                {h.par}
-                            </td>
+                            <td key={h.number} style={dataCell}>{h.par}</td>
                         ))}
                     </tr>
                 </thead>
                 <tbody>
                     <tr>
-                        <td style={{ padding: '0.25rem', fontWeight: 'bold' }}>Strokes</td>
+                        <td style={{ ...labelCell, fontWeight: 700 }}>Strokes</td>
                         {holes.map(h => (
-                            <td key={h.number} style={{ padding: '0.15rem' }}>
+                            <td key={h.number} style={dataCell}>
                                 <input
                                     ref={el => { inputRefs.current[h.number] = el; }}
                                     value={strokes[h.number]}
@@ -326,10 +330,10 @@ function HoleGrid({ holes, strokes, onChange, preview, inputRefs }) {
                             </td>
                         ))}
                     </tr>
-                    <tr style={{ color: 'var(--accent-amber-soft)', fontSize: '0.7rem' }}>
-                        <td style={{ padding: '0.15rem' }}>Pts</td>
+                    <tr style={{ color: 'var(--accent-amber-soft)', fontSize: '0.75rem' }}>
+                        <td style={labelCell}>Pts</td>
                         {holes.map(h => (
-                            <td key={h.number} style={{ textAlign: 'center', padding: '0.15rem' }}>
+                            <td key={h.number} style={dataCell}>
                                 {preview.nettoPerHole?.[h.number] ?? 0}
                             </td>
                         ))}

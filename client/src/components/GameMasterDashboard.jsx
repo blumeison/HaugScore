@@ -188,9 +188,9 @@ export default function GameMasterDashboard({ gameState, onUpdateTeam, onResetGa
                         <div key={team.id} className="flex items-center justify-between p-3 bg-slate-700 rounded">
                             <div className="flex items-center gap-3">
                                 {team.logo ? (
-                                    <img src={team.logo} alt={team.name} className="w-10 h-10 rounded-full object-cover" />
+                                    <img src={team.logo} alt={team.name} style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
                                 ) : (
-                                    <div className="w-10 h-10 rounded-full" style={{ background: team.color }}></div>
+                                    <div style={{ width: 40, height: 40, borderRadius: '50%', background: team.color, flexShrink: 0 }} />
                                 )}
                                 <span className="font-bold">{team.name}</span>
                             </div>

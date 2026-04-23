@@ -815,12 +815,28 @@ input[type="file"]::file-selector-button {
   margin: 0 0 var(--s-4) 0;
 }
 
-/* Tee + screenshots side-by-side on wide, stacked on narrow */
+/* Tee + screenshots side-by-side on wide, stacked on narrow.
+   align-items: start so columns with uneven content (e.g. HCP hint under tee)
+   don't stretch the file input to match. */
 .upload-modal__twocol {
   display: grid;
   gap: var(--s-3);
   grid-template-columns: 1fr;
+  align-items: start;
   margin-bottom: var(--s-4);
+}
+.upload-modal__twocol .field {
+  align-self: stretch;
+}
+.upload-modal__twocol .field > label {
+  /* Uniform label height so the control row below lines up across columns. */
+  min-height: 1.2em;
+  display: block;
+}
+.upload-modal__twocol .field > select,
+.upload-modal__twocol .field > input[type="file"] {
+  /* Match the visual height of the main interactive control in each column. */
+  min-height: 2.75rem;
 }
 @media (min-width: 640px) {
   .upload-modal__twocol { grid-template-columns: 1fr 1fr; }
