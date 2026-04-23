@@ -166,17 +166,13 @@ table.standings {
   max-width: 1100px;
   margin: 0 auto;
   padding: var(--s-4);
-  /* Prevent any overflowing child (wide standings table, scorecard) from
-     making the whole page horizontally scrollable. Inner scroll-containers
-     keep handling their own overflow. */
-  overflow-x: hidden;
+  /* No overflow-x: hidden here — we want the widest element (standings
+     table) to define the page width on mobile, so all sibling sections
+     (rounds list, etc.) naturally expand to match. Horizontal scrolling
+     happens once, at the page level. */
 }
 .page--narrow { max-width: 720px; }
 .page--wide { max-width: 1320px; }
-
-/* Let flex/grid children actually shrink inside cards instead of pushing
-   the container wider than the viewport. */
-.card, .stack, .cluster { min-width: 0; }
 
 @media (min-width: 640px) {
   .page { padding: var(--s-6); }
@@ -682,12 +678,32 @@ input[type="file"]::file-selector-button {
   border-radius: var(--r-md);
   flex-wrap: wrap;
 }
-.round-row__meta { flex: 1 1 220px; min-width: 0; display: flex; flex-direction: column; gap: var(--s-1); }
+/* On narrow screens: meta stacks vertically inside the row.
+   On wider screens: title / status / score lay out horizontally so we take
+   advantage of the width the standings table has already claimed. */
+.round-row__meta {
+  flex: 1 1 220px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+}
 .round-row__meta strong { color: var(--text-1); font-size: var(--fz-md); }
 .round-row__sub { color: var(--text-3); font-size: var(--fz-xs); display: inline-flex; gap: var(--s-2); align-items: center; flex-wrap: wrap; }
 .round-row__score { font-size: var(--fz-sm); color: var(--accent-amber-soft); }
 .round-row__score strong { font-size: var(--fz-md); color: var(--accent-amber-soft); }
 .round-row__actions { display: flex; gap: var(--s-2); flex-wrap: wrap; }
+
+@media (min-width: 640px) {
+  .round-row__meta {
+    flex-direction: row;
+    align-items: center;
+    gap: var(--s-4);
+    flex-wrap: wrap;
+  }
+  .round-row__meta strong { flex: 0 0 auto; min-width: 190px; }
+  .round-row__score { margin-left: auto; }
+}
 
 .round-add {
   display: flex; gap: var(--s-2); align-items: center;
@@ -1273,7 +1289,7 @@ input[type="file"]::file-selector-button {
 /* ── Keep scramble-specific legacy styles (team header, score input, wheel) ── */
 /* These are used by MainView (tablet-first). Keep styling intact. */
 
-.main-view { max-width: 800px; margin: 0 auto; padding: var(--s-4); overflow-x: hidden; }
+.main-view { max-width: 800px; margin: 0 auto; padding: var(--s-4); }
 
 .team-header {
   text-align: center;

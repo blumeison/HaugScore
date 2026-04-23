@@ -103,7 +103,7 @@ function SummaryLeaderboard({ sorted, rounds, sortBy, setSortBy, leaderTotal }) 
                 </div>
             </div>
 
-            <div style={{ overflowX: 'auto' }}>
+            <div>
                 <table className="standings-table">
                     <thead>
                         <tr>
