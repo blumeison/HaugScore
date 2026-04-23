@@ -166,13 +166,15 @@ table.standings {
   max-width: 1100px;
   margin: 0 auto;
   padding: var(--s-4);
-  /* No overflow-x: hidden here — we want the widest element (standings
-     table) to define the page width on mobile, so all sibling sections
-     (rounds list, etc.) naturally expand to match. Horizontal scrolling
-     happens once, at the page level. */
+  /* The round-detail pane must fit the viewport with NO horizontal scroll.
+     Standings (wider on mobile) scrolls inside its own container so the
+     page body never grows beyond the viewport. */
+  overflow-x: hidden;
 }
 .page--narrow { max-width: 720px; }
 .page--wide { max-width: 1320px; }
+
+.card, .stack, .cluster { min-width: 0; }
 
 @media (min-width: 640px) {
   .page { padding: var(--s-6); }
@@ -678,32 +680,23 @@ input[type="file"]::file-selector-button {
   border-radius: var(--r-md);
   flex-wrap: wrap;
 }
-/* On narrow screens: meta stacks vertically inside the row.
-   On wider screens: title / status / score lay out horizontally so we take
-   advantage of the width the standings table has already claimed. */
+/* Layout horizontally at all widths: title on the left, status/score spread
+   out using the full pane width, action button anchored right. Flex-wrap lets
+   things drop to the next line gracefully on ultra-narrow viewports. */
 .round-row__meta {
-  flex: 1 1 220px;
+  flex: 1 1 0;
   min-width: 0;
   display: flex;
-  flex-direction: column;
-  gap: var(--s-1);
+  flex-direction: row;
+  align-items: center;
+  gap: var(--s-3);
+  flex-wrap: wrap;
 }
-.round-row__meta strong { color: var(--text-1); font-size: var(--fz-md); }
+.round-row__meta strong { color: var(--text-1); font-size: var(--fz-md); flex: 0 0 auto; }
 .round-row__sub { color: var(--text-3); font-size: var(--fz-xs); display: inline-flex; gap: var(--s-2); align-items: center; flex-wrap: wrap; }
-.round-row__score { font-size: var(--fz-sm); color: var(--accent-amber-soft); }
+.round-row__score { font-size: var(--fz-sm); color: var(--accent-amber-soft); margin-left: auto; }
 .round-row__score strong { font-size: var(--fz-md); color: var(--accent-amber-soft); }
-.round-row__actions { display: flex; gap: var(--s-2); flex-wrap: wrap; }
-
-@media (min-width: 640px) {
-  .round-row__meta {
-    flex-direction: row;
-    align-items: center;
-    gap: var(--s-4);
-    flex-wrap: wrap;
-  }
-  .round-row__meta strong { flex: 0 0 auto; min-width: 190px; }
-  .round-row__score { margin-left: auto; }
-}
+.round-row__actions { display: flex; gap: var(--s-2); flex-wrap: wrap; flex: 0 0 auto; }
 
 .round-add {
   display: flex; gap: var(--s-2); align-items: center;
@@ -721,8 +714,9 @@ input[type="file"]::file-selector-button {
   background: var(--surface-sunken);
   border-radius: var(--r-md);
   padding: var(--s-3);
-  /* Scrolling happens in the inner wrapper (see SummaryLeaderboard) so that
-     position:sticky on the Netto column resolves to the correct ancestor. */
+  /* Table can exceed viewport — scrolls inside this container. Sticky
+     Netto column resolves to this scroll ancestor and stays pinned right. */
+  overflow-x: auto;
   min-width: 0;
 }
 .standings__header {
