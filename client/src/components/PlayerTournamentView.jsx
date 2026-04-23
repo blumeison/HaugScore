@@ -28,7 +28,7 @@ export default function PlayerTournamentView({ gameState, player, tournamentOps,
     const selected = tournaments.find(t => t.id === selectedId) || active[0] || completed[0] || null;
 
     return (
-        <div className="page page--narrow">
+        <div className="page">
             <div className="page-header">
                 <h1>🏆 Tournaments</h1>
                 <button className="btn btn--ghost" onClick={onExit}>← Back</button>
