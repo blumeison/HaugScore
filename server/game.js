@@ -343,12 +343,37 @@ function updatePlayer(sub, { name, logo, hcp }) {
     const player = getPlayer(sub);
     if (!player) return null;
     if (typeof name === 'string' && name.trim()) player.name = name.trim();
-    if (logo !== undefined) player.logo = logo || null; // null clears, undefined leaves alone
-    if (hcp !== undefined && hcp !== null && hcp !== '') {
+    if (logo !== undefined) player.logo = logo || null;
+    const hcpChanged = hcp !== undefined && hcp !== null && hcp !== '';
+    if (hcpChanged) {
         const clamped = clampHcp(hcp);
         if (clamped !== null) player.hcp = clamped;
     }
     player.updatedAt = new Date().toISOString();
+
+    // Recompute all stored tournament results for this player so netto scores
+    // reflect the updated HCP without requiring a new upload.
+    if (hcpChanged) {
+        for (const t of gameState.tournaments) {
+            for (const r of t.rounds) {
+                const result = r.results[sub];
+                if (!result || !result.strokes || !result.teeId) continue;
+                const course = COURSES[r.courseId];
+                if (!course) continue;
+                const tee = course.tees.find(te => te.id === result.teeId);
+                if (!tee) continue;
+                const { brutto, netto, courseHandicap, bruttoPerHole, nettoPerHole } =
+                    stableford.computeRound({ strokes: result.strokes, course, tee, playerHcp: player.hcp });
+                result.brutto = brutto;
+                result.netto = netto;
+                result.courseHandicap = courseHandicap;
+                result.bruttoPerHole = bruttoPerHole;
+                result.nettoPerHole = nettoPerHole;
+                result.playerHcp = player.hcp;
+            }
+        }
+    }
+
     saveState();
     return player;
 }
