@@ -289,7 +289,7 @@ function NineTable({ holes, label, result, tee }) {
     return (
         <div className="scorecard-nine">
             <div className="scorecard-nine__header">{label}</div>
-            <div style={{ overflowX: 'auto' }}>
+            <div>
                 <table className="scorecard">
                     <thead>
                         <tr>

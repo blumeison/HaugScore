@@ -1032,13 +1032,15 @@ input[type="file"]::file-selector-button {
   border-collapse: collapse;
   font-size: var(--fz-sm);
   font-variant-numeric: tabular-nums;
+  table-layout: fixed;
 }
 .scorecard th,
 .scorecard td {
   border: 1px solid #d8d0bc;
   text-align: center;
   padding: 0.4rem 0.2rem;
-  min-width: 34px;
+  min-width: 0;
+  overflow: hidden;
 }
 .scorecard thead th {
   background: #efe9d5;
@@ -1049,9 +1051,9 @@ input[type="file"]::file-selector-button {
 .scorecard thead th.label-col,
 .scorecard tbody td.label-col {
   text-align: left;
-  padding-left: 0.65rem;
-  padding-right: 0.65rem;
-  min-width: 90px;
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+  width: 72px;
   background: #efe9d5;
   font-weight: 600;
   color: #4b4426;
@@ -1060,7 +1062,7 @@ input[type="file"]::file-selector-button {
 .scorecard tbody td.total-col {
   background: #fff8d7;
   font-weight: 700;
-  min-width: 54px;
+  width: 48px;
 }
 .scorecard__hole-num { font-weight: 700; }
 .scorecard__hole-si  { font-size: var(--fz-xs); color: #7a6a46; font-weight: 500; }
@@ -1265,19 +1267,38 @@ input[type="file"]::file-selector-button {
 .legend-item.bogey       { background: #ffd0a5; color: #5a2a00; }
 .legend-item.double-bogey{ background: #ff8f8f; color: #fff; }
 
-/* Responsive tuning for the scorecard tables — keep columns tap-friendly */
+/* Responsive tuning for the scorecard tables — must fit viewport, no scroll.
+   The round-detail scorecard defines page width and never scrolls horizontally,
+   so on narrow screens we shrink fonts, paddings and fixed column widths. */
 @media (max-width: 640px) {
   .scoreboard-table,
   .scorecard {
-    font-size: var(--fz-xs);
+    font-size: 0.72rem;
   }
-  .scoreboard-table .hole-col,
-  .scorecard th { min-width: 30px; }
+  .scorecard th,
+  .scorecard td {
+    padding: 0.25rem 0.05rem;
+  }
+  .scorecard thead th.label-col,
+  .scorecard tbody td.label-col {
+    width: 56px;
+    padding-left: 0.3rem;
+    padding-right: 0.3rem;
+  }
+  .scorecard thead th.total-col,
+  .scorecard tbody td.total-col {
+    width: 38px;
+  }
+  .scorecard__strokes-row td { font-size: 0.8rem; }
+  .scorecard__points-row td,
+  .scorecard__vorgabe-row td { font-size: 0.62rem; }
+  .scoreboard-table .hole-col { min-width: 30px; }
   .hole-number { font-size: var(--fz-xs); }
   .hole-hcp, .scorecard__hole-si { font-size: 0.65rem; }
   .team-mini-logo { width: 22px; height: 22px; }
   .scoreboard-title h2,
   .scorecard-shell__title { font-size: var(--fz-md); }
+  .scorecard-shell { padding: var(--s-3); }
 }
 
 /* ── Keep scramble-specific legacy styles (team header, score input, wheel) ── */
