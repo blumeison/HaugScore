@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { fileToDownscaledDataUrl } from '../utils/imageResize';
 
 // PlayerProfile: the signed-in user edits their own profile record.
 // The server creates a stub record automatically on first sign-in (via
@@ -25,12 +26,15 @@ export default function PlayerProfile({ gameState, player, isApproved, hasProfil
         }
     }, [player?.name, player?.hcp]);
 
-    const handleFileChange = (e) => {
+    const handleFileChange = async (e) => {
         const file = e.target.files[0];
         if (!file) return;
-        const reader = new FileReader();
-        reader.onloadend = () => setLogo(reader.result);
-        reader.readAsDataURL(file);
+        try {
+            const scaled = await fileToDownscaledDataUrl(file, 512, 0.85);
+            setLogo(scaled);
+        } catch (err) {
+            console.error('Failed to process image', err);
+        }
     };
 
     const handleSave = (e) => {

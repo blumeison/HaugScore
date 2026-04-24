@@ -1,18 +1,19 @@
 import React, { useState } from 'react';
+import { fileToDownscaledDataUrl } from '../utils/imageResize';
 
 export default function TeamSetup({ gameState, myTeamId, onUpdateTeam, onClose }) {
     const myTeam = gameState.teams.find(t => t.id === myTeamId);
     const [name, setName] = useState(myTeam?.name || '');
     const [logo, setLogo] = useState(null);
 
-    const handleFileChange = (e) => {
+    const handleFileChange = async (e) => {
         const file = e.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setLogo(reader.result);
-            };
-            reader.readAsDataURL(file);
+        if (!file) return;
+        try {
+            const scaled = await fileToDownscaledDataUrl(file, 512, 0.85);
+            setLogo(scaled);
+        } catch (err) {
+            console.error('Failed to process image', err);
         }
     };
 

@@ -40,6 +40,9 @@ const io = new Server(server, {
     // tablets going to sleep can take 30-60s to reconnect, default 20s timeout is too aggressive.
     pingInterval: 25000,
     pingTimeout: 60000,
+    // Player/team avatars are sent as base64 data URLs via updatePlayer/updateTeam.
+    // Default 1 MB silently drops phone-camera PNGs (~2 MB). Match the HTTP limit.
+    maxHttpBufferSize: 30 * 1024 * 1024,
 });
 
 // Authenticate every socket connection via Google ID token (if provided).
